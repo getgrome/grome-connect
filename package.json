@@ -1,6 +1,6 @@
 {
   "name": "grome-connect",
-  "version": "0.1.10",
+  "version": "0.2.0",
   "description": "CLI for connected workspaces — link projects, share context with AI agents",
   "type": "module",
   "main": "./dist/index.cjs",
