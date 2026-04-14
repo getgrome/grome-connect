@@ -22,6 +22,7 @@ import { extractTypes } from '../extractors/types.js';
 import { extractSchemas } from '../extractors/schemas.js';
 import { detectFramework } from '../extractors/detection.js';
 import { atomicWrite, ensureDir } from '../utils.js';
+import { CLI_VERSION, compareVersions } from '../version.js';
 import micromatch from 'micromatch';
 
 interface ProjectScanResult {
@@ -186,6 +187,7 @@ async function computeSourceMaxMtime(root: string, config: GromeConfig): Promise
  */
 interface SyncIndex {
   lastExtractionMtime?: number;
+  cliVersion?: string;
 }
 
 function readSyncIndex(root: string): SyncIndex {
@@ -238,6 +240,24 @@ export class MemoryWriter {
     const resolvedRoot = path.resolve(projectRoot);
     const allRoots = ConnectionManager.getAllProjectRoots(resolvedRoot);
     const force = options?.force === true;
+
+    // Version-skew guard: if any connected project's sync index was
+    // written by a *newer* CLI than the one running now, refuse to
+    // proceed. An older CLI silently drops fields it doesn't recognize,
+    // which would corrupt files the newer CLI had written. Throwing is
+    // safer than partial writes — operator can update and retry.
+    for (const root of allRoots) {
+      const idx = readSyncIndex(root);
+      if (idx.cliVersion && compareVersions(idx.cliVersion, CLI_VERSION) > 0) {
+        const name = ConnectionManager.getProjectName(root);
+        throw new Error(
+          `Version skew: ${name} was last synced by grome-connect@${idx.cliVersion}, ` +
+            `but this CLI is grome-connect@${CLI_VERSION}. Running an older CLI ` +
+            `over newer files can drop data. Upgrade (\`npm i -g grome-connect@latest\`) ` +
+            `and retry.`
+        );
+      }
+    }
 
     // Dirty check: has any scannable source file changed since the last
     // extraction? A stat-only pass (no file reads) — far cheaper than the
@@ -356,9 +376,14 @@ export class MemoryWriter {
     MemoryWriter.regenerateThreadIndexes(allRoots);
 
     // Stamp the sync index in every project so the next sync can skip
-    // extraction if nothing in source trees has changed.
+    // extraction if nothing in source trees has changed. Also record the
+    // CLI version that produced the current state — used by version-skew
+    // guards on future runs.
     for (const root of allRoots) {
-      writeSyncIndex(root, { lastExtractionMtime: currentMaxMtime });
+      writeSyncIndex(root, {
+        lastExtractionMtime: currentMaxMtime,
+        cliVersion: CLI_VERSION,
+      });
     }
 
     return {
@@ -498,6 +523,7 @@ export class MemoryWriter {
     const manifest: ProjectManifest = {
       version: 1,
       generatedAt: data.now,
+      cliVersion: CLI_VERSION,
       thisProject: projectName,
       connections: data.connections,
       stats: {
@@ -678,6 +704,7 @@ Connected projects: ${connectedNames}
       // one has to parse the markdown table.
       const jsonBody = {
         version: 1 as const,
+        cliVersion: CLI_VERSION,
         project: projectName,
         generatedAt: new Date().toISOString(),
         threads: entries.map(({ mtimeMs: _mtime, ...rest }) => rest),

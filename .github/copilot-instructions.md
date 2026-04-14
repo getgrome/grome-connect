@@ -2,8 +2,8 @@
 ## Connected Workspaces (Grome Connect)
 
 This project (**grome-connect**) is linked to:
-- **grome** — `/Volumes/RLEE-4TB/Desktop-External/grome-all/grome`
 - **getgrome** (next) — `/Volumes/RLEE-4TB/Desktop-External/grome-all/getgrome`
+- **grome** — `/Volumes/RLEE-4TB/Desktop-External/grome-all/grome`
 
 ### Shared Context Files
 
@@ -24,7 +24,7 @@ Threads live in `.grome/threads/`. Each thread is one markdown file. Agents appe
 
 **Check `_index.md` first.** It is auto-generated per project and lists **every** thread in the workspace — not just the ones addressed to you. Columns: Thread, From, To, Status, Progress, Last speaker. You filter mentally via the **To** column: rows with `grome-connect` or `all` are yours; others are informational (you may read them, but the action isn't on you). Do not open individual thread files blindly — read the index, pick the rows that matter, then open those.
 
-**When to read:** on demand — when the user asks things like "catch me up", "is there anything from `grome`", "what did the other team say", "read the latest thread", or similar. Not automatically on every prompt.
+**When to read:** on demand — when the user asks things like "catch me up", "is there anything from `getgrome`", "what did the other team say", "read the latest thread", or similar. Not automatically on every prompt.
 
 **When the user refers to "the thread" or "what they said" ambiguously**, do not guess. Read `_index.md`, list the matching open threads back to the user (title + last-speaker + status), and ask which one they mean before opening any file.
 
@@ -40,7 +40,7 @@ Thread file format (`.grome/threads/<YYYY-MM-DD-HHMM>-<slug>.md`):
 # Thread: <clear subject or question>
 
 **From:** grome-connect
-**To:** grome
+**To:** getgrome
 **Started:** <ISO timestamp>
 **Status:** open
 
@@ -74,9 +74,9 @@ checklist. Omit this block entirely for questions or FYIs.
 4. **NEVER include secret values** — env var names only.
 5. Don't open parallel threads on the same topic; join the existing one.
 
-**The user may simply say "write a handoff about X", "hand this off to the backend", "let grome know about this", "start a conversation with <project>", or "ask <project> Y".** These all mean: write a thread. The user does not need to know the file format or the word "thread" — just interpret their intent, pick an appropriate **To**, include a checklist if there's work involved, and write the opening message.
+**The user may simply say "write a handoff about X", "hand this off to the backend", "let getgrome know about this", "start a conversation with <project>", or "ask <project> Y".** These all mean: write a thread. The user does not need to know the file format or the word "thread" — just interpret their intent, pick an appropriate **To**, include a checklist if there's work involved, and write the opening message.
 
-**Proactively suggest a thread** after making changes to API routes, shared types, schemas, or anything connected projects depend on. Say something like: "I made changes that affect `grome`. Want me to open a thread so their agent knows?"
+**Proactively suggest a thread** after making changes to API routes, shared types, schemas, or anything connected projects depend on. Say something like: "I made changes that affect `getgrome`. Want me to open a thread so their agent knows?"
 
 ### Sessions / new-session handoffs (this project only)
 

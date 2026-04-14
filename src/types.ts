@@ -110,6 +110,7 @@ export interface ApiSchemasFile {
 export interface ProjectManifest {
   version: number;
   generatedAt: string;
+  cliVersion?: string;
   thisProject: string;
   connections: Array<Connection & { framework: string | null }>;
   stats: {
