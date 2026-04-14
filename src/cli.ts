@@ -26,8 +26,13 @@ program
 
 program
   .command('sync')
-  .description('Scan all connected projects and write shared memory files')
+  .description('Propagate threads and (if source changed) re-extract shared memory')
   .action(syncCommand);
+
+program
+  .command('sync-full')
+  .description('Force a full rescan — ignore sync index, rebuild all memory')
+  .action(() => syncCommand({ force: true }));
 
 program
   .command('status')

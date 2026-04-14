@@ -4,7 +4,7 @@ import { ConnectionManager } from '../core/ConnectionManager.js';
 import { MemoryWriter } from '../core/MemoryWriter.js';
 import { color, symbols } from '../utils.js';
 
-export async function syncCommand(): Promise<void> {
+export async function syncCommand(options?: { force?: boolean }): Promise<void> {
   const projectRoot = path.resolve(process.cwd());
 
   if (!ConnectionManager.isInitialized(projectRoot)) {
@@ -43,8 +43,15 @@ export async function syncCommand(): Promise<void> {
           console.log(`  ${symbols.success} ${extraction.schemas.length} schemas`);
         if (extraction.routes.length === 0 && extraction.types.length === 0 && extraction.schemas.length === 0)
           console.log(`  ${color.dim('  No extractable items found')}`);
-      }
+      },
+      options
     );
+
+    if (result.extractionSkipped) {
+      console.log(`  ${color.dim('Source unchanged — extraction skipped.')} ${color.dim(`(use ${color.cyan('grome sync-full')} to force.)`)}`);
+      console.log(`\n${symbols.success} ${color.green('Threads propagated.')}\n`);
+      return;
+    }
 
     console.log(`\nWriting memory to ${result.projects.length} projects...`);
     for (const project of result.projects) {

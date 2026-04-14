@@ -148,6 +148,57 @@ function parseThreadHeader(content: string): {
  * progress as `done/total`, or `✓` when all done, or `—` when there are
  * no checklist items at all.
  */
+/**
+ * Fast-glob stat-only pass across a project's scannable files, returning
+ * the latest mtime. Used to cheaply decide whether extraction needs to
+ * rerun. No file contents are read.
+ */
+async function computeSourceMaxMtime(root: string, config: GromeConfig): Promise<number> {
+  const fg = (await import('fast-glob')).default;
+  const checker = new (await import('./PermissionChecker.js')).PermissionChecker(config);
+  const entries = await fg('**/*', {
+    cwd: root,
+    dot: true,
+    ignore: checker.getDenyPatterns(),
+    onlyFiles: true,
+    followSymbolicLinks: false,
+    stats: true,
+  });
+  let max = 0;
+  for (const e of entries) {
+    // Only consider files the scanner would actually read.
+    if (!/\.(ts|js|tsx|jsx|prisma)$/.test(e.path)) continue;
+    const mtime = e.stats?.mtimeMs ?? 0;
+    if (mtime > max) max = mtime;
+  }
+  return max;
+}
+
+/**
+ * Per-project sync index lives at `.grome/.sync-index.json`. Missing or
+ * unreadable → treat as "everything dirty" (forces a full extraction).
+ */
+interface SyncIndex {
+  lastExtractionMtime?: number;
+}
+
+function readSyncIndex(root: string): SyncIndex {
+  try {
+    const p = path.join(ConnectionManager.getGromeDir(root), '.sync-index.json');
+    if (!fs.existsSync(p)) return {};
+    return JSON.parse(fs.readFileSync(p, 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+function writeSyncIndex(root: string, data: SyncIndex): void {
+  try {
+    const p = path.join(ConnectionManager.getGromeDir(root), '.sync-index.json');
+    fs.writeFileSync(p, JSON.stringify(data, null, 2));
+  } catch { /* best-effort */ }
+}
+
 function countChecklist(content: string): { done: number; total: number } {
   let done = 0;
   let total = 0;
@@ -168,22 +219,57 @@ export class MemoryWriter {
   static async sync(
     projectRoot: string,
     onProjectStart?: (name: string) => void,
-    onProjectResult?: (name: string, result: ExtractionResult, framework: Framework) => void
+    onProjectResult?: (name: string, result: ExtractionResult, framework: Framework) => void,
+    options?: { force?: boolean }
   ): Promise<{
     projects: ProjectScanResult[];
     totalRoutes: number;
     totalTypes: number;
     totalSchemas: number;
     updatedConfigs: Map<string, string[]>;
+    extractionSkipped: boolean;
   }> {
     const resolvedRoot = path.resolve(projectRoot);
     const allRoots = ConnectionManager.getAllProjectRoots(resolvedRoot);
+    const force = options?.force === true;
 
-    // Phase 1: Scan all projects
+    // Dirty check: has any scannable source file changed since the last
+    // extraction? A stat-only pass (no file reads) — far cheaper than the
+    // extraction itself, so safe to run every sync. Extraction is an
+    // all-or-nothing pipeline (routes/types/schemas share source files
+    // and get merged across projects), so dirty is computed globally.
+    let currentMaxMtime = 0;
+    for (const root of allRoots) {
+      try {
+        const config = ConnectionManager.readConfig(root);
+        const mtime = await computeSourceMaxMtime(root, config);
+        if (mtime > currentMaxMtime) currentMaxMtime = mtime;
+      } catch { /* skip */ }
+    }
+    const savedMaxMtime = Math.min(
+      ...allRoots.map((r) => readSyncIndex(r).lastExtractionMtime ?? 0)
+    );
+    const extractionDirty = force || currentMaxMtime > savedMaxMtime || savedMaxMtime === 0;
+
+    // Phase 1: Scan all projects (only if extraction is dirty)
     const scanResults: ProjectScanResult[] = [];
     const allRoutes: ExtractedRoute[] = [];
     const allTypes: ExtractedType[] = [];
     const allSchemas: ExtractedSchema[] = [];
+
+    if (!extractionDirty) {
+      // Threads still propagate — that's independent and always cheap.
+      MemoryWriter.propagateThreads(allRoots);
+      MemoryWriter.regenerateThreadIndexes(allRoots);
+      return {
+        projects: [],
+        totalRoutes: 0,
+        totalTypes: 0,
+        totalSchemas: 0,
+        updatedConfigs: new Map(),
+        extractionSkipped: true,
+      };
+    }
 
     for (const root of allRoots) {
       const name = ConnectionManager.getProjectName(root);
@@ -263,12 +349,19 @@ export class MemoryWriter {
     MemoryWriter.propagateThreads(allRoots);
     MemoryWriter.regenerateThreadIndexes(allRoots);
 
+    // Stamp the sync index in every project so the next sync can skip
+    // extraction if nothing in source trees has changed.
+    for (const root of allRoots) {
+      writeSyncIndex(root, { lastExtractionMtime: currentMaxMtime });
+    }
+
     return {
       projects: scanResults,
       totalRoutes: allRoutes.length,
       totalTypes: allTypes.length,
       totalSchemas: allSchemas.length,
       updatedConfigs,
+      extractionSkipped: false,
     };
   }
 
