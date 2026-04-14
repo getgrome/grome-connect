@@ -83,16 +83,28 @@ const INTERNAL_NAME_PATTERNS = [
 ];
 
 /**
- * Parse the header fields out of a markdown handoff. The format is
- * permissive — we expect a `# Title`, then bold-labeled fields like
- * `**From:**`, `**To:**`, `**Type:**`. Missing fields fall back to
- * sensible defaults so an index can still be rendered.
+ * Parse the header of a thread file. Threads look like:
+ *
+ * ```
+ * # Thread: <subject>
+ *
+ * **From:** <project>
+ * **To:** <project> | <project, project> | all
+ * **Started:** <ISO timestamp>
+ * **Status:** open | resolved
+ *
+ * ## <project> @ <timestamp>
+ * ...message...
+ * ```
+ *
+ * Everything is optional — missing fields fall back to defaults so an
+ * index can always be rendered.
  */
-function parseHandoffHeader(content: string): {
+function parseThreadHeader(content: string): {
   from: string;
   to: 'all' | string[];
-  type: string;
-  summary: string;
+  status: string;
+  lastSpeaker: string | null;
 } {
   const field = (label: string): string | undefined => {
     const re = new RegExp(`\\*\\*${label}:\\*\\*\\s*([^\\n]+)`, 'i');
@@ -100,120 +112,38 @@ function parseHandoffHeader(content: string): {
     return m ? m[1].trim() : undefined;
   };
 
-  const from = field('From') ?? 'unknown';
-  const type = field('Type') ?? 'note';
+  const from = field('From') ?? field('Started by') ?? 'unknown';
+  const status = (field('Status') ?? 'open').toLowerCase();
   const toRaw = field('To') ?? 'all';
-
   const to: 'all' | string[] =
     toRaw.toLowerCase() === 'all'
       ? 'all'
       : toRaw.split(',').map((s) => s.trim()).filter(Boolean);
 
-  // Summary: first non-heading, non-blank line after the header block,
-  // truncated for the table.
-  const lines = content.split('\n');
-  let summary = '';
-  let inHeader = true;
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    if (inHeader) {
-      if (trimmed.startsWith('#') || trimmed.startsWith('**')) continue;
-      inHeader = false;
-    }
-    if (
-      trimmed.startsWith('#') ||
-      trimmed.startsWith('>') ||
-      trimmed.startsWith('|') ||
-      trimmed.startsWith('-')
-    ) continue;
-    summary = trimmed;
-    break;
-  }
-  if (summary.length > 140) summary = summary.slice(0, 137) + '...';
-
-  return { from, to, type, summary: summary || '—' };
-}
-
-/**
- * Read the per-recipient tracking row for a project out of a handoff's
- * markdown table. Expected format near the bottom of the file:
- *
- * ```
- * | Project  | Read | Done |
- * | -------- | ---- | ---- |
- * | grome    | [x]  | [ ]  |
- * | getgrome | [ ]  | [ ]  |
- * ```
- *
- * If the project isn't in the table (or the table is missing), both
- * values are reported as false — the file is effectively unread.
- */
-function readTrackingRow(
-  content: string,
-  projectName: string
-): { read: boolean; implemented: boolean } {
-  const lines = content.split('\n');
-  const rowRe = new RegExp(`^\\|\\s*${escapeForRegex(projectName)}\\s*\\|`, 'i');
-  for (const line of lines) {
-    if (!rowRe.test(line)) continue;
-    const cells = line.split('|').map((c) => c.trim());
-    // cells[0] is '' before first |, cells[1] is project, cells[2] is read, cells[3] is done
-    const read = /\[\s*x\s*\]/i.test(cells[2] ?? '');
-    const implemented = /\[\s*x\s*\]/i.test(cells[3] ?? '');
-    return { read, implemented };
-  }
-  return { read: false, implemented: false };
-}
-
-function escapeForRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
- * Parse a conversation file's header. Conversations look like:
- *
- * ```
- * # Conversation: <topic>
- *
- * **Started by:** <project>
- * **Status:** open | resolved
- *
- * ## <project> @ <timestamp>
- * ...message body...
- *
- * ## <other project> @ <timestamp>
- * ...
- * ```
- *
- * lastSpeaker is pulled from the final `## <project> @` heading so the
- * index can show who talked most recently without loading the full file.
- */
-function parseConversationHeader(content: string): {
-  topic: string;
-  status: string;
-  startedBy: string;
-  lastSpeaker: string | null;
-} {
-  const titleMatch = content.match(/^#\s*(?:Conversation:\s*)?(.+)$/m);
-  const topic = titleMatch ? titleMatch[1].trim() : 'untitled';
-
-  const field = (label: string): string | undefined => {
-    const re = new RegExp(`\\*\\*${label}:\\*\\*\\s*([^\\n]+)`, 'i');
-    const m = content.match(re);
-    return m ? m[1].trim() : undefined;
-  };
-
-  const status = (field('Status') ?? 'open').toLowerCase();
-  const startedBy = field('Started by') ?? field('From') ?? 'unknown';
-
-  // Find the last `## <project> @ <timestamp>` heading.
   const messageHeadings = [...content.matchAll(/^##\s+(.+?)\s*@\s*.+$/gm)];
   const lastSpeaker = messageHeadings.length > 0
     ? messageHeadings[messageHeadings.length - 1][1].trim()
     : null;
 
-  return { topic, status, startedBy, lastSpeaker };
+  return { from, to, status, lastSpeaker };
+}
+
+/**
+ * Count checklist items in a thread. Supports both `- [ ]` / `- [x]`
+ * (spec-compliant) and `* [ ]` / `* [x]` (alternative). The index shows
+ * progress as `done/total`, or `✓` when all done, or `—` when there are
+ * no checklist items at all.
+ */
+function countChecklist(content: string): { done: number; total: number } {
+  let done = 0;
+  let total = 0;
+  const re = /^\s*[-*]\s+\[([ xX])\]\s+/gm;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(content)) !== null) {
+    total++;
+    if (match[1].toLowerCase() === 'x') done++;
+  }
+  return { done, total };
 }
 
 export class MemoryWriter {
@@ -313,17 +243,11 @@ export class MemoryWriter {
       }
     }
 
-    // Phase 4: Propagate user-written markdown handoffs across all projects,
-    // then regenerate per-project _index.md so agents can quickly find the
-    // handoffs addressed to them without opening every file.
-    MemoryWriter.propagateMarkdownHandoffs(allRoots);
-    MemoryWriter.regenerateHandoffIndexes(allRoots);
-
-    // Phase 5: Same treatment for conversations — multi-turn dialogs that
-    // agents in connected projects use to reach consensus without the user
-    // acting as broker. Append-only .md files, propagated mtime-wins.
-    MemoryWriter.propagateConversations(allRoots);
-    MemoryWriter.regenerateConversationIndexes(allRoots);
+    // Phase 4: Propagate threads (the single cross-project message primitive)
+    // across all connected projects and regenerate per-project _index.md so
+    // agents can scan for what's addressed to them without opening every file.
+    MemoryWriter.propagateThreads(allRoots);
+    MemoryWriter.regenerateThreadIndexes(allRoots);
 
     return {
       projects: scanResults,
@@ -499,162 +423,61 @@ Connected projects: ${connectedNames}
   }
 
   /**
-   * Collect every `.md` handoff across all projects and copy any that are
-   * missing in a target project. Uses modified-time as a tiebreaker when a
-   * filename exists in multiple projects.
+   * Propagate thread files (`.grome/memory/threads/*.md`) across every
+   * connected project. Threads are the single cross-project message
+   * primitive — announcements, questions, multi-turn discussions, all
+   * collapse here. Propagation is mtime-wins: the newest copy of a given
+   * filename overwrites older copies in every other project.
    */
-  private static propagateMarkdownHandoffs(allRoots: string[]): void {
+  private static propagateThreads(allRoots: string[]): void {
     type Entry = { absPath: string; mtimeMs: number };
     const byName = new Map<string, Entry>();
 
     for (const root of allRoots) {
-      const dir = path.join(ConnectionManager.getMemoryDir(root), 'handoffs');
+      const dir = path.join(ConnectionManager.getMemoryDir(root), 'threads');
       if (!fs.existsSync(dir)) continue;
       for (const name of fs.readdirSync(dir)) {
-        if (!name.endsWith('.md')) continue;
-        const absPath = path.join(dir, name);
-        let mtimeMs = 0;
-        try { mtimeMs = fs.statSync(absPath).mtimeMs; } catch { continue; }
-        const prev = byName.get(name);
-        if (!prev || mtimeMs > prev.mtimeMs) {
-          byName.set(name, { absPath, mtimeMs });
-        }
-      }
-    }
-
-    if (byName.size === 0) return;
-
-    for (const root of allRoots) {
-      const dir = path.join(ConnectionManager.getMemoryDir(root), 'handoffs');
-      ensureDir(dir);
-      for (const [name, entry] of byName) {
-        const target = path.join(dir, name);
-        if (target === entry.absPath) continue;
-        try {
-          const existing = fs.existsSync(target) ? fs.statSync(target).mtimeMs : -1;
-          if (entry.mtimeMs > existing) {
-            fs.copyFileSync(entry.absPath, target);
-          }
-        } catch { /* skip unreadable */ }
-      }
-    }
-  }
-
-  /**
-   * Regenerate `_index.md` in every project's handoffs directory. The index
-   * is a filtered table showing only handoffs addressed to that project (or
-   * `all`), so agents can answer "is there a handoff for me?" without
-   * opening every file. Source of truth is the individual `.md` files; the
-   * index is fully derived and safe to re-generate on every sync.
-   */
-  private static regenerateHandoffIndexes(allRoots: string[]): void {
-    for (const root of allRoots) {
-      const projectName = ConnectionManager.getProjectName(root);
-      const dir = path.join(ConnectionManager.getMemoryDir(root), 'handoffs');
-      if (!fs.existsSync(dir)) continue;
-
-      const rows: string[] = [];
-      for (const name of fs.readdirSync(dir).sort()) {
         if (!name.endsWith('.md') || name === '_index.md') continue;
         const absPath = path.join(dir, name);
-        let content: string;
-        try { content = fs.readFileSync(absPath, 'utf-8'); } catch { continue; }
-
-        const parsed = parseHandoffHeader(content);
-        const targetsThisProject =
-          parsed.to === 'all' || parsed.to.includes(projectName);
-        if (!targetsThisProject) continue;
-
-        const status = readTrackingRow(content, projectName);
-        const toLabel = parsed.to === 'all' ? 'all' : parsed.to.join(', ');
-        rows.push(
-          `| [\`${name}\`](./${name}) | ${parsed.from} | ${toLabel} | ${parsed.type} | ${
-            parsed.summary.replace(/\|/g, '\\|')
-          } | ${status.read ? 'x' : ' '} | ${status.implemented ? 'x' : ' '} |`
-        );
-      }
-
-      const body = rows.length > 0
-        ? [
-          `# Handoffs for \`${projectName}\``,
-          '',
-          '> Auto-generated by `grome sync`. Do not edit — re-run sync to refresh.',
-          '> Source of truth is the individual `.md` files. Update the tracking',
-          '> table inside each handoff when you read or implement it; this index',
-          '> will reflect the change on the next sync.',
-          '',
-          '| Handoff | From | To | Type | Summary | Read | Done |',
-          '| ------- | ---- | -- | ---- | ------- | ---- | ---- |',
-          ...rows,
-          '',
-        ].join('\n')
-        : [
-          `# Handoffs for \`${projectName}\``,
-          '',
-          'No open handoffs addressed to this project.',
-          '',
-        ].join('\n');
-
-      try {
-        fs.writeFileSync(path.join(dir, '_index.md'), body);
-      } catch { /* skip */ }
-    }
-  }
-
-  /**
-   * Mtime-wins propagation for `.grome/memory/conversations/*.md`. Same
-   * semantics as propagateMarkdownHandoffs, different directory — conversations
-   * are broadcast to every connected project so anyone can join or eavesdrop.
-   */
-  private static propagateConversations(allRoots: string[]): void {
-    type Entry = { absPath: string; mtimeMs: number };
-    const byName = new Map<string, Entry>();
-
-    for (const root of allRoots) {
-      const dir = path.join(ConnectionManager.getMemoryDir(root), 'conversations');
-      if (!fs.existsSync(dir)) continue;
-      for (const name of fs.readdirSync(dir)) {
-        if (!name.endsWith('.md')) continue;
-        const absPath = path.join(dir, name);
         let mtimeMs = 0;
         try { mtimeMs = fs.statSync(absPath).mtimeMs; } catch { continue; }
         const prev = byName.get(name);
-        if (!prev || mtimeMs > prev.mtimeMs) {
-          byName.set(name, { absPath, mtimeMs });
-        }
+        if (!prev || mtimeMs > prev.mtimeMs) byName.set(name, { absPath, mtimeMs });
       }
     }
 
     if (byName.size === 0) return;
 
     for (const root of allRoots) {
-      const dir = path.join(ConnectionManager.getMemoryDir(root), 'conversations');
+      const dir = path.join(ConnectionManager.getMemoryDir(root), 'threads');
       ensureDir(dir);
       for (const [name, entry] of byName) {
         const target = path.join(dir, name);
         if (target === entry.absPath) continue;
         try {
           const existing = fs.existsSync(target) ? fs.statSync(target).mtimeMs : -1;
-          if (entry.mtimeMs > existing) {
-            fs.copyFileSync(entry.absPath, target);
-          }
+          if (entry.mtimeMs > existing) fs.copyFileSync(entry.absPath, target);
         } catch { /* skip unreadable */ }
       }
     }
   }
 
   /**
-   * Regenerate `_index.md` in every project's conversations dir. One table,
-   * sorted by last-activity (file mtime). Shows status, participants, and the
-   * most recent message author so agents can decide whether to jump in.
+   * Regenerate `_index.md` in every project's threads dir. One table per
+   * project, filtered to threads addressed to that project (or `all`),
+   * sorted by last-activity. Columns: thread, from, to, status, progress
+   * (checklist completion), last speaker.
+   *
+   * Source of truth is always the individual `.md` files. This index is
+   * pure projection and safe to regenerate every sync.
    */
-  private static regenerateConversationIndexes(allRoots: string[]): void {
+  private static regenerateThreadIndexes(allRoots: string[]): void {
     for (const root of allRoots) {
       const projectName = ConnectionManager.getProjectName(root);
-      const dir = path.join(ConnectionManager.getMemoryDir(root), 'conversations');
+      const dir = path.join(ConnectionManager.getMemoryDir(root), 'threads');
       if (!fs.existsSync(dir)) continue;
 
-      type Row = { name: string; mtimeMs: number; line: string };
+      type Row = { mtimeMs: number; line: string };
       const rows: Row[] = [];
 
       for (const name of fs.readdirSync(dir)) {
@@ -667,11 +490,18 @@ Connected projects: ${connectedNames}
           mtimeMs = fs.statSync(absPath).mtimeMs;
         } catch { continue; }
 
-        const parsed = parseConversationHeader(content);
+        const parsed = parseThreadHeader(content);
+        const targetsThisProject =
+          parsed.to === 'all' || parsed.to.includes(projectName);
+        if (!targetsThisProject) continue;
+
+        const { done, total } = countChecklist(content);
+        const progress = total === 0 ? '—' : done === total ? '✓' : `${done}/${total}`;
+        const toLabel = parsed.to === 'all' ? 'all' : parsed.to.join(', ');
+
         rows.push({
-          name,
           mtimeMs,
-          line: `| [\`${name}\`](./${name}) | ${parsed.topic.replace(/\|/g, '\\|')} | ${parsed.status} | ${parsed.startedBy} | ${parsed.lastSpeaker ?? '—'} |`,
+          line: `| [\`${name}\`](./${name}) | ${parsed.from} | ${toLabel} | ${parsed.status} | ${progress} | ${parsed.lastSpeaker ?? '—'} |`,
         });
       }
 
@@ -679,20 +509,21 @@ Connected projects: ${connectedNames}
 
       const body = rows.length > 0
         ? [
-          `# Conversations (\`${projectName}\`)`,
+          `# Threads for \`${projectName}\``,
           '',
-          '> Auto-generated by `grome sync`. Source of truth is the individual `.md` files —',
-          '> append messages to them to participate. Re-run sync to refresh this index.',
+          '> Auto-generated by `grome sync`. Source of truth is the individual `.md` files.',
+          '> Append messages, flip checklist boxes, or change `**Status:**` in each file;',
+          '> this index will reflect the change on the next sync.',
           '',
-          '| File | Topic | Status | Started by | Last speaker |',
-          '| ---- | ----- | ------ | ---------- | ------------ |',
+          '| Thread | From | To | Status | Progress | Last speaker |',
+          '| ------ | ---- | -- | ------ | -------- | ------------ |',
           ...rows.map((r) => r.line),
           '',
         ].join('\n')
         : [
-          `# Conversations (\`${projectName}\`)`,
+          `# Threads for \`${projectName}\``,
           '',
-          'No conversations yet.',
+          'No threads addressed to this project.',
           '',
         ].join('\n');
 

@@ -5,7 +5,6 @@ import { syncCommand } from './cli/sync.js';
 import { statusCommand } from './cli/status.js';
 import { unlinkCommand } from './cli/unlink.js';
 import { watchCommand } from './cli/watch.js';
-import { handoffCommand, handoffListCommand, handoffAckCommand, handoffDoneCommand } from './cli/handoff.js';
 
 const program = new Command();
 
@@ -44,31 +43,5 @@ program
   .command('watch')
   .description('Watch connected projects and auto-sync on file changes')
   .action(watchCommand);
-
-program
-  .command('handoff <summary>')
-  .description('Create a handoff note for connected projects')
-  .option('--type <type>', 'Type: feature-complete, breaking-change, dependency-update, migration, note', 'note')
-  .option('--files <files>', 'Comma-separated list of changed files')
-  .option('--breaking <changes>', 'Comma-separated breaking changes')
-  .option('--deps <deps>', 'Comma-separated new dependencies')
-  .option('--env <vars>', 'Comma-separated new env vars')
-  .option('--notes <text>', 'Additional notes for agents')
-  .action((summary: string, opts) => handoffCommand(summary, opts));
-
-program
-  .command('handoffs')
-  .description('List all handoffs')
-  .action(handoffListCommand);
-
-program
-  .command('handoff-ack <id>')
-  .description('Acknowledge a handoff')
-  .action(handoffAckCommand);
-
-program
-  .command('handoff-done <id>')
-  .description('Mark a handoff as completed')
-  .action(handoffDoneCommand);
 
 program.parse();
