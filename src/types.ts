@@ -12,8 +12,15 @@ export interface GromeConfig {
     handoffs: boolean;
     /** Include `.d.ts` declaration files when extracting types. Default false. */
     declarationFiles?: boolean;
+    /**
+     * Globs that identify "public API surface" files for shared-types extraction.
+     * Default: common type-declaration file conventions (types.ts, types/, schemas/,
+     * models/, contracts/, shared/, barrel indexes). Set to `['**\/*.ts', '**\/*.tsx']`
+     * to disable the filter and extract from every file.
+     */
+    sharedTypesGlobs?: string[];
   };
-  /** Per-project soft limit on extracted entities. Default 500. */
+  /** Per-project soft limit on extracted entities. Default 100. */
   maxEntriesPerKind?: number;
 }
 

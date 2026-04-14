@@ -23,6 +23,7 @@ import { extractSchemas } from '../extractors/schemas.js';
 import { detectFramework } from '../extractors/detection.js';
 import { atomicWrite, ensureDir } from '../utils.js';
 import { AutoHandoff } from './AutoHandoff.js';
+import micromatch from 'micromatch';
 
 interface ProjectScanResult {
   name: string;
@@ -32,7 +33,55 @@ interface ProjectScanResult {
   originalCounts: { routes: number; types: number; schemas: number };
 }
 
-const DEFAULT_MAX_ENTRIES_PER_KIND = 500;
+const DEFAULT_MAX_ENTRIES_PER_KIND = 100;
+
+/**
+ * Default "public API surface" globs for shared-types extraction.
+ * Covers the common conventions for exposing types meant to be consumed
+ * across a project boundary. Implementation files (utils, components,
+ * hooks, handlers, etc.) are deliberately excluded so shared-types.json
+ * stays focused on what connected projects actually need to know.
+ */
+const DEFAULT_SHARED_TYPES_GLOBS = [
+  '**/types.ts',
+  '**/types.tsx',
+  '**/types/**/*.ts',
+  '**/types/**/*.tsx',
+  '**/schema.ts',
+  '**/schemas/**/*.ts',
+  '**/models.ts',
+  '**/models/**/*.ts',
+  '**/contracts/**/*.ts',
+  '**/contracts/**/*.tsx',
+  '**/shared/**/*.ts',
+  '**/shared/**/*.tsx',
+  '**/api-types.ts',
+  '**/api/types.ts',
+  '**/dto.ts',
+  '**/dtos/**/*.ts',
+  // Root barrel indexes — `src/index.ts`, `index.ts`, `src/lib/index.ts`, etc.
+  'index.ts',
+  'src/index.ts',
+  'src/lib/index.ts',
+  'lib/index.ts',
+];
+
+const TEST_FILE_PATTERNS = [
+  '**/*.test.ts',
+  '**/*.test.tsx',
+  '**/*.spec.ts',
+  '**/*.spec.tsx',
+  '**/__tests__/**',
+  '**/test/**',
+  '**/tests/**',
+  '**/__mocks__/**',
+];
+
+const INTERNAL_NAME_PATTERNS = [
+  /^_/,           // _Foo, _internal
+  /^Internal/,
+  /^Private/,
+];
 
 export class MemoryWriter {
   /**
@@ -175,6 +224,8 @@ export class MemoryWriter {
     const types: ExtractedType[] = [];
     const schemas: ExtractedSchema[] = [];
 
+    const sharedTypesGlobs = config.extractors.sharedTypesGlobs ?? DEFAULT_SHARED_TYPES_GLOBS;
+
     // Get scannable files
     const files = await scanner.scan();
 
@@ -183,6 +234,14 @@ export class MemoryWriter {
 
       // Only read text files we can extract from
       if (!relPath.match(/\.(ts|js|tsx|jsx|prisma)$/)) continue;
+
+      // Routes and schemas still scan all files; shared-types extraction
+      // is restricted to files that match a public-surface glob (and skips
+      // test files), so shared-types.json stays focused on cross-project API
+      // shape rather than every exported interface in the codebase.
+      const isTestFile = micromatch.isMatch(relPath, TEST_FILE_PATTERNS);
+      const isSharedTypeFile = !isTestFile &&
+        micromatch.isMatch(relPath, sharedTypesGlobs);
 
       let content: string;
       try {
@@ -195,8 +254,11 @@ export class MemoryWriter {
         routes.push(...extractRoutes(content, relPath, projectName, framework));
       }
 
-      if (config.extractors.types && relPath.match(/\.(ts|tsx)$/)) {
-        types.push(...extractTypes(content, relPath, projectName));
+      if (config.extractors.types && isSharedTypeFile && relPath.match(/\.(ts|tsx)$/)) {
+        const fileTypes = extractTypes(content, relPath, projectName).filter(
+          (t) => !INTERNAL_NAME_PATTERNS.some((re) => re.test(t.name))
+        );
+        types.push(...fileTypes);
       }
 
       if (config.extractors.schemas) {
