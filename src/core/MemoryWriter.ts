@@ -29,7 +29,10 @@ interface ProjectScanResult {
   root: string;
   framework: Framework;
   extraction: ExtractionResult;
+  originalCounts: { routes: number; types: number; schemas: number };
 }
+
+const DEFAULT_MAX_ENTRIES_PER_KIND = 500;
 
 export class MemoryWriter {
   /**
@@ -63,15 +66,42 @@ export class MemoryWriter {
 
       const config = ConnectionManager.readConfig(root);
       const framework = detectFramework(root);
-      const extraction = await MemoryWriter.scanProject(root, config, framework, name);
+      const raw = await MemoryWriter.scanProject(root, config, framework, name);
+
+      const cap = config.maxEntriesPerKind ?? DEFAULT_MAX_ENTRIES_PER_KIND;
+      const originalCounts = {
+        routes: raw.routes.length,
+        types: raw.types.length,
+        schemas: raw.schemas.length,
+      };
+      const extraction: ExtractionResult = {
+        framework: raw.framework,
+        routes: raw.routes.slice(0, cap),
+        types: raw.types.slice(0, cap),
+        schemas: raw.schemas.slice(0, cap),
+      };
 
       allRoutes.push(...extraction.routes);
       allTypes.push(...extraction.types);
       allSchemas.push(...extraction.schemas);
 
-      scanResults.push({ name, root, framework, extraction });
+      scanResults.push({ name, root, framework, extraction, originalCounts });
       onProjectResult?.(name, extraction, framework);
     }
+
+    const originalTotals = scanResults.reduce(
+      (acc, r) => ({
+        routes: acc.routes + r.originalCounts.routes,
+        types: acc.types + r.originalCounts.types,
+        schemas: acc.schemas + r.originalCounts.schemas,
+      }),
+      { routes: 0, types: 0, schemas: 0 }
+    );
+    const truncated = {
+      routes: originalTotals.routes > allRoutes.length,
+      types: originalTotals.types > allTypes.length,
+      schemas: originalTotals.schemas > allSchemas.length,
+    };
 
     // Phase 1.5: Auto-handoff — diff against previous sync and generate handoffs for changes
     const autoHandoffs: import('../types.js').Handoff[] = [];
@@ -105,6 +135,8 @@ export class MemoryWriter {
         schemas: allSchemas,
         connections: connectionsWithFramework,
         now,
+        truncated,
+        originalTotals,
       });
 
       // Phase 3: Update agent config files
@@ -182,6 +214,8 @@ export class MemoryWriter {
       schemas: ExtractedSchema[];
       connections: Array<Connection & { framework: Framework }>;
       now: string;
+      truncated: { routes: boolean; types: boolean; schemas: boolean };
+      originalTotals: { routes: number; types: number; schemas: number };
     }
   ): Promise<void> {
     const memoryDir = ConnectionManager.getMemoryDir(projectRoot);
@@ -192,6 +226,10 @@ export class MemoryWriter {
       version: 1,
       generatedAt: data.now,
       routes: data.routes,
+      ...(data.truncated.routes && {
+        truncated: true,
+        originalCount: data.originalTotals.routes,
+      }),
     };
     await atomicWrite(
       path.join(memoryDir, 'route-map.json'),
@@ -203,6 +241,10 @@ export class MemoryWriter {
       version: 1,
       generatedAt: data.now,
       types: data.types,
+      ...(data.truncated.types && {
+        truncated: true,
+        originalCount: data.originalTotals.types,
+      }),
     };
     await atomicWrite(
       path.join(memoryDir, 'shared-types.json'),
@@ -214,6 +256,10 @@ export class MemoryWriter {
       version: 1,
       generatedAt: data.now,
       schemas: data.schemas,
+      ...(data.truncated.schemas && {
+        truncated: true,
+        originalCount: data.originalTotals.schemas,
+      }),
     };
     await atomicWrite(
       path.join(memoryDir, 'api-schemas.json'),

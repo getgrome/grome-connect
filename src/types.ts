@@ -10,7 +10,11 @@ export interface GromeConfig {
     types: boolean;
     schemas: boolean;
     handoffs: boolean;
+    /** Include `.d.ts` declaration files when extracting types. Default false. */
+    declarationFiles?: boolean;
   };
+  /** Per-project soft limit on extracted entities. Default 500. */
+  maxEntriesPerKind?: number;
 }
 
 export interface Connection {
@@ -67,18 +71,24 @@ export interface RouteMapFile {
   version: number;
   generatedAt: string;
   routes: ExtractedRoute[];
+  truncated?: boolean;
+  originalCount?: number;
 }
 
 export interface SharedTypesFile {
   version: number;
   generatedAt: string;
   types: ExtractedType[];
+  truncated?: boolean;
+  originalCount?: number;
 }
 
 export interface ApiSchemasFile {
   version: number;
   generatedAt: string;
   schemas: ExtractedSchema[];
+  truncated?: boolean;
+  originalCount?: number;
 }
 
 export interface ProjectManifest {
