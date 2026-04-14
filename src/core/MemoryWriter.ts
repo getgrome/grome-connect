@@ -83,6 +83,20 @@ const INTERNAL_NAME_PATTERNS = [
 ];
 
 /**
+ * Read a project's config and return whether threads are enabled.
+ * Missing config or missing field both default to `true` — threads are
+ * opt-out, not opt-in.
+ */
+function threadsEnabled(projectRoot: string): boolean {
+  try {
+    const config = ConnectionManager.readConfig(projectRoot);
+    return config.enableThreads !== false;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * Parse the header of a thread file. Threads look like:
  *
  * ```
@@ -423,7 +437,7 @@ Connected projects: ${connectedNames}
   }
 
   /**
-   * Propagate thread files (`.grome/memory/threads/*.md`) across every
+   * Propagate thread files (`.grome/threads/*.md`) across every
    * connected project. Threads are the single cross-project message
    * primitive — announcements, questions, multi-turn discussions, all
    * collapse here. Propagation is mtime-wins: the newest copy of a given
@@ -433,8 +447,11 @@ Connected projects: ${connectedNames}
     type Entry = { absPath: string; mtimeMs: number };
     const byName = new Map<string, Entry>();
 
+    // Collect only from projects that have threads enabled — a disabled
+    // project's locally-authored threads don't propagate outward.
     for (const root of allRoots) {
-      const dir = path.join(ConnectionManager.getMemoryDir(root), 'threads');
+      if (!threadsEnabled(root)) continue;
+      const dir = path.join(ConnectionManager.getGromeDir(root), 'threads');
       if (!fs.existsSync(dir)) continue;
       for (const name of fs.readdirSync(dir)) {
         if (!name.endsWith('.md') || name === '_index.md') continue;
@@ -448,8 +465,11 @@ Connected projects: ${connectedNames}
 
     if (byName.size === 0) return;
 
+    // Write only to projects that have threads enabled — threads don't
+    // land in a disabled project's dir even if peers have them.
     for (const root of allRoots) {
-      const dir = path.join(ConnectionManager.getMemoryDir(root), 'threads');
+      if (!threadsEnabled(root)) continue;
+      const dir = path.join(ConnectionManager.getGromeDir(root), 'threads');
       ensureDir(dir);
       for (const [name, entry] of byName) {
         const target = path.join(dir, name);
@@ -473,8 +493,9 @@ Connected projects: ${connectedNames}
    */
   private static regenerateThreadIndexes(allRoots: string[]): void {
     for (const root of allRoots) {
+      if (!threadsEnabled(root)) continue;
       const projectName = ConnectionManager.getProjectName(root);
-      const dir = path.join(ConnectionManager.getMemoryDir(root), 'threads');
+      const dir = path.join(ConnectionManager.getGromeDir(root), 'threads');
       if (!fs.existsSync(dir)) continue;
 
       type Row = { mtimeMs: number; line: string };

@@ -22,6 +22,15 @@ export interface GromeConfig {
   };
   /** Per-project soft limit on extracted entities. Default 100. */
   maxEntriesPerKind?: number;
+  /**
+   * When `false`, this project opts out of cross-project threads entirely:
+   * the Threads section is omitted from its agent config injection, no
+   * `_index.md` is generated, and threads neither propagate out from this
+   * project nor land in this project's `threads/` dir. Peers with
+   * `enableThreads: true` continue exchanging threads among themselves
+   * normally. Existing files on disk are left untouched. Default `true`.
+   */
+  enableThreads?: boolean;
 }
 
 export interface Connection {

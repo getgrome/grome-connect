@@ -27,6 +27,15 @@ export function buildInjection(projectRoot: string): string {
     return '';
   }
 
+  // Threads is opt-out (default true). When false, the Threads section
+  // is omitted entirely — agents in this project should have no reason
+  // to know threads exist.
+  let enableThreads = true;
+  try {
+    const config = ConnectionManager.readConfig(projectRoot);
+    enableThreads = config.enableThreads !== false;
+  } catch { /* default true */ }
+
   // Build project list with frameworks
   const projectLines = connections.connections.map(conn => {
     let framework = '';
@@ -57,11 +66,11 @@ Cross-project context is in \`.grome/memory/\`. **Read these files when working 
 | \`api-schemas.json\` | Writing validation schemas that must match a connected project's data model |
 | \`project-manifest.json\` | Checking which projects are connected and when context was last synced |
 
-### Threads (cross-project messaging)
+${enableThreads ? `### Threads (cross-project messaging)
 
 A **thread** is the single primitive for anything an agent in one project wants to communicate to agents in connected projects — announcements with action items, questions, FYIs, multi-turn discussions. They all use the same file shape, live in the same directory, and show up in the same index.
 
-Threads live in \`.grome/memory/threads/\`. Each thread is one markdown file. Agents append messages over time; nothing is ever edited after it's posted.
+Threads live in \`.grome/threads/\`. Each thread is one markdown file. Agents append messages over time; nothing is ever edited after it's posted.
 
 **Check \`_index.md\` first.** It is auto-generated per project and lists only threads addressed to **this** project (\`${projectName}\`) — either directly by name or addressed to \`all\`. Columns: Thread, From, To, Status, Progress, Last speaker. Do not read every file in the threads directory; read only what the index points to.
 
@@ -69,13 +78,13 @@ Threads live in \`.grome/memory/threads/\`. Each thread is one markdown file. Ag
 
 **When the user refers to "the thread" or "what they said" ambiguously**, do not guess. Read \`_index.md\`, list the matching open threads back to the user (title + last-speaker + status), and ask which one they mean before opening any file.
 
-**Starting a thread:** create \`.grome/memory/threads/<YYYY-MM-DD-HHMM>-<slug>.md\` using the template below. Use the \`To\` field to address a specific project, a comma-separated list, or \`all\`. Include a checklist when there are concrete action items; omit it when it's a question or FYI. Run \`grome sync\` to distribute.
+**Starting a thread:** create \`.grome/threads/<YYYY-MM-DD-HHMM>-<slug>.md\` using the template below. Use the \`To\` field to address a specific project, a comma-separated list, or \`all\`. Include a checklist when there are concrete action items; omit it when it's a question or FYI. Run \`grome sync\` to distribute.
 
 **Replying:** open the thread file and append a new \`## <your project> @ <ISO timestamp>\` section at the bottom. If someone added checklist items that you've completed, flip \`[ ]\` to \`[x]\` in-place. Run \`grome sync\` to propagate back.
 
 **Resolving:** when the thread is settled, any participant appends a resolution footer and changes the header's \`**Status:**\` line to \`resolved\`.
 
-Thread file format (\`.grome/memory/threads/<YYYY-MM-DD-HHMM>-<slug>.md\`):
+Thread file format (\`.grome/threads/<YYYY-MM-DD-HHMM>-<slug>.md\`):
 
 \`\`\`markdown
 # Thread: <clear subject or question>
@@ -118,10 +127,10 @@ checklist. Omit this block entirely for questions or FYIs.
 **The user may simply say "write a handoff about X", "hand this off to the backend", "let ${peerExample} know about this", "start a conversation with <project>", or "ask <project> Y".** These all mean: write a thread. The user does not need to know the file format or the word "thread" — just interpret their intent, pick an appropriate **To**, include a checklist if there's work involved, and write the opening message.
 
 **Proactively suggest a thread** after making changes to API routes, shared types, schemas, or anything connected projects depend on. Say something like: "I made changes that affect \`${peerExample}\`. Want me to open a thread so their agent knows?"
-
+` : ''}
 ### Sessions / new-session handoffs (this project only)
 
-A **session note** (a.k.a. **new-session handoff**) is an *internal* handoff for the next agent that opens this same workspace — distinct from cross-project threads in \`.grome/memory/threads/\`. They contain **everything the next agent needs** to pick up cleanly when the current context is about to be lost (compaction, IDE reset, end of a long session). Sessions are NOT synced across projects — use threads for that.
+A **session note** (a.k.a. **new-session handoff**) is an *internal* handoff for the next agent that opens this same workspace — distinct from cross-project threads in \`.grome/threads/\`. They contain **everything the next agent needs** to pick up cleanly when the current context is about to be lost (compaction, IDE reset, end of a long session). Sessions are NOT synced across projects — use threads for that.
 
 Session files live in \`.grome/sessions/\`. Two kinds:
 - \`history.md\` — auto-generated by the Grome IDE from hook events; a rolling summary of prompts, tool usage, and file touches. (Only present if the user runs Grome IDE with hooks enabled.)
