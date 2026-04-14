@@ -1,14 +1,16 @@
-# grome
+# grome-connect
 
 CLI that bidirectionally links projects so AI agents can share context across repos.
 
-When you link two projects, grome scans each for routes, types, and schemas, and writes a shared-context snapshot into every linked project's `.grome/memory/` directory. Agents running in any linked project see the shape of the others — endpoints, types, schemas — without you pasting context between chats.
+When you link two projects, `grome` scans each for routes, types, and schemas, and writes a shared-context snapshot into every linked project's `.grome/memory/` directory. Agents running in any linked project see the shape of the others — endpoints, types, schemas — without you pasting context between chats.
 
 ## Install
 
 ```bash
-npm i -g grome
+npm i -g grome-connect
 ```
+
+> **Package vs command name.** The npm package is `grome-connect`, but the binary installed on your `PATH` is called `grome`. So you install `grome-connect` once and then run `grome init`, `grome link`, `grome sync`, etc. The package name was rejected as `grome` on npm (too similar to existing packages), so we kept the command short and scoped the package.
 
 ## Quickstart
 
