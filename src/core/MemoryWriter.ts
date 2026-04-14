@@ -514,8 +514,9 @@ Connected projects: ${connectedNames}
         if (!targetsThisProject) continue;
 
         const status = readTrackingRow(content, projectName);
+        const toLabel = parsed.to === 'all' ? 'all' : parsed.to.join(', ');
         rows.push(
-          `| [\`${name}\`](./${name}) | ${parsed.from} | ${parsed.type} | ${
+          `| [\`${name}\`](./${name}) | ${parsed.from} | ${toLabel} | ${parsed.type} | ${
             parsed.summary.replace(/\|/g, '\\|')
           } | ${status.read ? 'x' : ' '} | ${status.implemented ? 'x' : ' '} |`
         );
@@ -530,8 +531,8 @@ Connected projects: ${connectedNames}
           '> table inside each handoff when you read or implement it; this index',
           '> will reflect the change on the next sync.',
           '',
-          '| Handoff | From | Type | Summary | Read | Done |',
-          '| ------- | ---- | ---- | ------- | ---- | ---- |',
+          '| Handoff | From | To | Type | Summary | Read | Done |',
+          '| ------- | ---- | -- | ---- | ------- | ---- | ---- |',
           ...rows,
           '',
         ].join('\n')
