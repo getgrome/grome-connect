@@ -4,11 +4,21 @@ import * as path from 'node:path';
 /**
  * Atomic write: write to .tmp file then rename.
  * Ensures agents never read partial data.
+ *
+ * Both the write and the rename can fail (disk full, permissions,
+ * cross-filesystem rename). On any failure the tmp file is cleaned up
+ * and the error is re-thrown, so callers learn about it immediately
+ * rather than discovering silent data loss on the next read.
  */
 export async function atomicWrite(filePath: string, content: string): Promise<void> {
   const tmpPath = filePath + '.tmp';
-  fs.writeFileSync(tmpPath, content, 'utf-8');
-  fs.renameSync(tmpPath, filePath);
+  try {
+    fs.writeFileSync(tmpPath, content, 'utf-8');
+    fs.renameSync(tmpPath, filePath);
+  } catch (err) {
+    try { fs.unlinkSync(tmpPath); } catch { /* already gone */ }
+    throw err;
+  }
 }
 
 /**

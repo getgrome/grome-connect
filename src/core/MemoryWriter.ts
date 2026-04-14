@@ -201,9 +201,13 @@ function readSyncIndex(root: string): SyncIndex {
 }
 
 function writeSyncIndex(root: string, data: SyncIndex): void {
+  // Use tmp + rename so concurrent syncs can't produce a torn file
+  // that would confuse the next run's dirty check or version guard.
   try {
     const p = path.join(ConnectionManager.getGromeDir(root), '.sync-index.json');
-    fs.writeFileSync(p, JSON.stringify(data, null, 2));
+    const tmp = p + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+    fs.renameSync(tmp, p);
   } catch { /* best-effort */ }
 }
 
@@ -421,6 +425,15 @@ export class MemoryWriter {
       // Only read text files we can extract from
       if (!relPath.match(/\.(ts|js|tsx|jsx|prisma)$/)) continue;
 
+      // Safety cap: skip huge source files. Real hand-written TS/JS is
+      // ~never over 1 MB; a file this big is typically generated/bundled
+      // output that slipped past the deny list. Reading it would waste
+      // memory on content the extractors can't use anyway.
+      try {
+        const size = fs.statSync(path.join(root, relPath)).size;
+        if (size > 1_000_000) continue;
+      } catch { continue; }
+
       // Routes and schemas still scan all files; shared-types extraction
       // is restricted to files that match a public-surface glob (and skips
       // test files), so shared-types.json stays focused on cross-project API
@@ -574,6 +587,12 @@ Connected projects: ${connectedNames}
 
     // Collect only from projects that have threads enabled — a disabled
     // project's locally-authored threads don't propagate outward.
+    // Reject mtimes strictly in the future: `touch -d 2099-01-01` on a
+    // thread file would otherwise let a peer permanently own the content.
+    // A small positive skew tolerance (5 min) absorbs clock drift between
+    // machines without opening the spoofing door.
+    const SKEW_TOLERANCE_MS = 5 * 60 * 1000;
+    const futureCutoff = Date.now() + SKEW_TOLERANCE_MS;
     for (const root of allRoots) {
       if (!threadsEnabled(root)) continue;
       const dir = path.join(ConnectionManager.getGromeDir(root), 'threads');
@@ -583,6 +602,7 @@ Connected projects: ${connectedNames}
         const absPath = path.join(dir, name);
         let mtimeMs = 0;
         try { mtimeMs = fs.statSync(absPath).mtimeMs; } catch { continue; }
+        if (mtimeMs > futureCutoff) continue; // reject future-stamped files
         const prev = byName.get(name);
         if (!prev || mtimeMs > prev.mtimeMs) byName.set(name, { absPath, mtimeMs });
       }
