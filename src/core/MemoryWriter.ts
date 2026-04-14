@@ -115,10 +115,12 @@ function threadsEnabled(projectRoot: string): boolean {
  * index can always be rendered.
  */
 function parseThreadHeader(content: string): {
+  subject: string;
   from: string;
   to: 'all' | string[];
   status: string;
   lastSpeaker: string | null;
+  startedAt: string | null;
 } {
   const field = (label: string): string | undefined => {
     const re = new RegExp(`\\*\\*${label}:\\*\\*\\s*([^\\n]+)`, 'i');
@@ -126,8 +128,12 @@ function parseThreadHeader(content: string): {
     return m ? m[1].trim() : undefined;
   };
 
+  const titleMatch = content.match(/^#\s*(?:Thread:\s*)?(.+)$/m);
+  const subject = titleMatch ? titleMatch[1].trim() : 'untitled';
+
   const from = field('From') ?? field('Started by') ?? 'unknown';
   const status = (field('Status') ?? 'open').toLowerCase();
+  const startedAt = field('Started') ?? field('Date') ?? null;
   const toRaw = field('To') ?? 'all';
   const to: 'all' | string[] =
     toRaw.toLowerCase() === 'all'
@@ -139,7 +145,7 @@ function parseThreadHeader(content: string): {
     ? messageHeadings[messageHeadings.length - 1][1].trim()
     : null;
 
-  return { from, to, status, lastSpeaker };
+  return { subject, from, to, status, lastSpeaker, startedAt };
 }
 
 /**
@@ -591,8 +597,19 @@ Connected projects: ${connectedNames}
       const dir = path.join(ConnectionManager.getGromeDir(root), 'threads');
       if (!fs.existsSync(dir)) continue;
 
-      type Row = { mtimeMs: number; line: string };
-      const rows: Row[] = [];
+      interface ThreadEntry {
+        file: string;
+        subject: string;
+        from: string;
+        to: string[];
+        status: string;
+        progress: { done: number; total: number } | null;
+        lastSpeaker: string | null;
+        lastActivity: string;
+        startedAt: string | null;
+        mtimeMs: number;
+      }
+      const entries: ThreadEntry[] = [];
 
       for (const name of fs.readdirSync(dir)) {
         if (!name.endsWith('.md') || name === '_index.md') continue;
@@ -605,20 +622,36 @@ Connected projects: ${connectedNames}
         } catch { continue; }
 
         const parsed = parseThreadHeader(content);
-
         const { done, total } = countChecklist(content);
-        const progress = total === 0 ? '—' : done === total ? '✓' : `${done}/${total}`;
-        const toLabel = parsed.to === 'all' ? 'all' : parsed.to.join(', ');
+        const to = parsed.to === 'all' ? ['all'] : parsed.to;
 
-        rows.push({
+        entries.push({
+          file: name,
+          subject: parsed.subject,
+          from: parsed.from,
+          to,
+          status: parsed.status,
+          progress: total === 0 ? null : { done, total },
+          lastSpeaker: parsed.lastSpeaker,
+          lastActivity: new Date(mtimeMs).toISOString(),
+          startedAt: parsed.startedAt,
           mtimeMs,
-          line: `| [\`${name}\`](./${name}) | ${parsed.from} | ${toLabel} | ${parsed.status} | ${progress} | ${parsed.lastSpeaker ?? '—'} |`,
         });
       }
 
-      rows.sort((a, b) => b.mtimeMs - a.mtimeMs);
+      entries.sort((a, b) => b.mtimeMs - a.mtimeMs);
 
-      const body = rows.length > 0
+      // _index.md — human-readable table
+      const rowLines = entries.map((e) => {
+        const toLabel = e.to.join(', ');
+        const progress = e.progress === null
+          ? '—'
+          : e.progress.done === e.progress.total
+            ? '✓'
+            : `${e.progress.done}/${e.progress.total}`;
+        return `| [\`${e.file}\`](./${e.file}) | ${e.from} | ${toLabel} | ${e.status} | ${progress} | ${e.lastSpeaker ?? '—'} |`;
+      });
+      const mdBody = entries.length > 0
         ? [
           `# Threads for \`${projectName}\``,
           '',
@@ -628,17 +661,33 @@ Connected projects: ${connectedNames}
           '',
           '| Thread | From | To | Status | Progress | Last speaker |',
           '| ------ | ---- | -- | ------ | -------- | ------------ |',
-          ...rows.map((r) => r.line),
+          ...rowLines,
           '',
         ].join('\n')
         : [
           `# Threads for \`${projectName}\``,
           '',
-          'No threads addressed to this project.',
+          'No threads.',
           '',
         ].join('\n');
 
-      try { fs.writeFileSync(path.join(dir, '_index.md'), body); } catch { /* skip */ }
+      try { fs.writeFileSync(path.join(dir, '_index.md'), mdBody); } catch { /* skip */ }
+
+      // _index.json — machine-readable sidecar. Same data, stable schema.
+      // Consumed by the Grome IDE and any other programmatic client so no
+      // one has to parse the markdown table.
+      const jsonBody = {
+        version: 1 as const,
+        project: projectName,
+        generatedAt: new Date().toISOString(),
+        threads: entries.map(({ mtimeMs: _mtime, ...rest }) => rest),
+      };
+      try {
+        fs.writeFileSync(
+          path.join(dir, '_index.json'),
+          JSON.stringify(jsonBody, null, 2)
+        );
+      } catch { /* skip */ }
     }
   }
 
