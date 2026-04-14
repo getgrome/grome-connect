@@ -1,16 +1,16 @@
 {
   "connections": [
     {
-      "projectId": "zpqna1n8",
-      "name": "grome",
-      "path": "/Volumes/RLEE-4TB/Desktop-External/grome-all/grome",
-      "linked": "2026-04-10T02:34:30.763Z"
-    },
-    {
-      "projectId": "ok83u912",
+      "projectId": "t9ueqtrs",
       "name": "getgrome",
       "path": "/Volumes/RLEE-4TB/Desktop-External/grome-all/getgrome",
-      "linked": "2026-04-10T02:34:30.763Z"
+      "linked": "2026-04-14T12:51:38.629Z"
+    },
+    {
+      "projectId": "app6clgq",
+      "name": "grome",
+      "path": "/Volumes/RLEE-4TB/Desktop-External/grome-all/grome",
+      "linked": "2026-04-14T12:51:38.629Z"
     }
   ]
 }

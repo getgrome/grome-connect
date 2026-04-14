@@ -46,6 +46,7 @@ export class MemoryWriter {
     totalTypes: number;
     totalSchemas: number;
     updatedConfigs: Map<string, string[]>;
+    autoHandoffs: import('../types.js').Handoff[];
   }> {
     const resolvedRoot = path.resolve(projectRoot);
     const allRoots = ConnectionManager.getAllProjectRoots(resolvedRoot);

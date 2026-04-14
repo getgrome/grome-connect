@@ -1,65 +1,41 @@
-# grome-connect
 
-CLI that manages bidirectional connections between projects so AI agents can share context across repos. Installed globally via `npm i -g grome` and invoked as `grome`.
 
-## What it does
+<!-- grome:start -->
+## Connected Workspaces (Grome Connect)
 
-- `grome init` — create `.grome/` in the current project (config + empty memory/handoffs dirs).
-- `grome link <path>` — bidirectionally link two projects so they appear in each other's `connections.json`.
-- `grome sync` — scan all connected projects for routes, types, schemas; write `.grome/memory/*.json` into every connected project so agents in each can see the others' shape. Also injects the "Connected Workspaces" block into every agent config file (CLAUDE.md, .cursorrules, AGENTS.md, .github/copilot-instructions.md, CONVENTIONS.md, codex.md).
-- `grome status` — print current connections + memory staleness.
-- `grome unlink <path>` / `grome watch` / `grome handoff …` — connection removal, auto-sync on change, handoff CRUD.
+This project (**grome-connect**) is linked to:
+- **getgrome** — `/Volumes/RLEE-4TB/Desktop-External/grome-all/getgrome`
+- **grome** — `/Volumes/RLEE-4TB/Desktop-External/grome-all/grome`
 
-## Repo layout
+### Shared Context Files
 
-```
-src/
-  cli/                   command implementations (one file per command)
-  core/
-    ConnectionManager.ts    read/write .grome/config.json, .grome/connections.json
-    MemoryWriter.ts         scan connected projects, write memory/*.json
-    AgentConfigInjector.ts  inject/upsert the CLAUDE.md block (this is the doc agents actually read)
-    AutoHandoff.ts          diff-based auto-handoff generation
-    PermissionChecker.ts    deny/allow pattern enforcement
-    Scanner.ts              file discovery
-    SecretScanner.ts        redact secret-looking values from handoffs
-  extractors/            route/type/schema extraction per framework
-  index.ts               commander program setup
-  types.ts               shared interfaces
-bin/cli.js               entry point (loads dist/index.js)
-```
+Cross-project context is in `.grome/memory/`. **Read these files when working across projects:**
 
-## The `.grome/` directory model
+| File | When to read |
+|------|-------------|
+| `route-map.json` | Making API calls, fetch requests, or referencing endpoints from connected projects |
+| `shared-types.json` | Importing types, defining interfaces, or matching request/response shapes |
+| `api-schemas.json` | Writing validation schemas that must match a connected project's data model |
+| `project-manifest.json` | Checking which projects are connected and when context was last synced |
 
-grome-connect is the source of truth for the `.grome/` layout. The Grome IDE writes some of these files too; both tools must agree.
+### Handoffs
 
-| Path | Written by | Synced? | Purpose |
-|------|-----------|---------|---------|
-| `.grome/config.json` | grome-connect | no | Per-project config: projectId, deny/allow rules, extractor toggles. |
-| `.grome/connections.json` | grome-connect | no | List of linked projects (bidirectional). |
-| `.grome/memory/route-map.json` | grome-connect `sync` | yes (written into all peers) | Cross-project API endpoint map. |
-| `.grome/memory/shared-types.json` | grome-connect `sync` | yes | Cross-project TypeScript types. |
-| `.grome/memory/api-schemas.json` | grome-connect `sync` | yes | Cross-project validation schemas. |
-| `.grome/memory/project-manifest.json` | grome-connect `sync` | yes | Which projects are connected, when last synced. |
-| `.grome/memory/handoffs/*.md` | either (agent via editor, or `grome handoff`) | yes (distributed to peers on sync) | Human-readable briefing docs *between* projects. |
-| `.grome/sessions/history.md` | Grome IDE hook pipeline | **no — project-local** | Auto-generated rolling session summary. |
-| `.grome/sessions/<YYYY-MM-DD-HHMM>-<slug>.md` | agent on user request | **no — project-local** | User-triggered session briefing for the *next* agent in *this* project. |
-| `.grome/hook-events.jsonl` | Grome IDE Claude Code hooks | **no — project-local** | Append-only hook event log, used for debugging only. |
-| `.grome/attachments/` | Grome IDE | no | Binary/file attachments referenced from chats. |
+Check `.grome/memory/handoffs/` for open handoffs **before starting any task**. These are detailed markdown briefings from connected projects.
 
-### Key invariants
+**Reading:** Read every `.md` file in handoffs/. Act on relevant ones. Add "Acknowledged by [project]" at the bottom when done.
 
-1. **Anything under `.grome/memory/` is synced to peers.** Anything under `.grome/sessions/` or `.grome/hook-events.jsonl` is **never** synced — those are per-project and leaking them across peers would conflate contexts.
-2. **Secrets must never land in any synced file.** `SecretScanner` redacts before writing; the agent-config injection explicitly instructs agents to use env-var names only.
-3. **Handoffs vs. sessions:** handoffs are *cross-project* (what other projects should do); sessions are *same-project, across-time* (what the next agent in this repo should do). They have different formats and live in different directories.
+**Writing:** When the user says "write a handoff" or "hand this off to X" or you've made cross-project changes, write a detailed markdown briefing to `.grome/memory/handoffs/<timestamp>-<slug>.md`. Include: what changed, why, impact on connected projects, specific action items, file paths, and any breaking changes. Write for an agent with zero context. Then run `grome sync`.
 
-## Contributing / editing this repo
+**The user does not need to mention Grome.** Interpret "hand this off", "let the backend know", "write a handoff about X" as: write the briefing document.
 
-- Build: `npm run build` (tsup → `dist/`)
-- The CLAUDE.md block that gets injected into every connected project's agent config files is generated by `buildInjection()` in `src/core/AgentConfigInjector.ts`. **That function is the canonical source of what connected-project agents are told.** If you change the `.grome/` directory model, update `buildInjection()` first, then run `grome sync` in a test project to verify the injected block.
-- When adding a new file type under `.grome/`, decide explicitly whether it's synced or project-local and document it in the table above.
-- Tests: `npm test` (if present). Always run `grome sync` on a test fixture project after touching `MemoryWriter` or `AgentConfigInjector`.
+Proactively suggest handoffs after cross-project changes.
 
-## Relationship to the Grome IDE
+### Session History
 
-The Grome IDE (VS Code fork) ships with a dashboard that reads `.grome/` state, runs Claude Code hooks that write `.grome/hook-events.jsonl` and `.grome/sessions/history.md`, and gates those hooks on whether a workspace is "connected" (i.e. `.grome/config.json` exists). grome-connect does not depend on the IDE — a user who only installs `npm i -g grome-connect` still gets all cross-project features. The IDE adds: hook events, session auto-summary, dashboard UI.
+Check `.grome/sessions/history.md` at the start of every new conversation. This file is auto-generated by Grome and contains a summary of what happened in previous agent sessions: user prompts, files touched, commands run, tool usage, and token counts. Use it to get context on recent work without asking the user to repeat themselves.
+
+### Rules
+
+1. If memory files are stale (check `generatedAt`), tell the user to run `grome sync`.
+2. **NEVER include secret values** in handoffs or .grome/ files. Use env var names only.
+<!-- grome:end -->

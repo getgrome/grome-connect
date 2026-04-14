@@ -5,6 +5,7 @@ import { ConnectionManager } from '../core/ConnectionManager.js';
 import { MemoryWriter } from '../core/MemoryWriter.js';
 import { Scanner, FILE_COUNT_WARNING_THRESHOLD } from '../core/Scanner.js';
 import { color, symbols } from '../utils.js';
+import type { GromeConfig } from '../types.js';
 
 const FREE_PLAN_LIMIT = 2;
 
@@ -52,7 +53,7 @@ export async function linkCommand(targetPath: string, options?: { force?: boolea
 
   // Pre-scan file count check — warn about large repos
   if (!options?.force) {
-    const defaultConfig = {
+    const defaultConfig: GromeConfig = {
       version: 1,
       projectId: '',
       deny: [],
