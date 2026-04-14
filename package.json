@@ -1,5 +1,5 @@
 {
-  "name": "grome",
+  "name": "grome-connect",
   "version": "0.1.1",
   "description": "CLI for connected workspaces — link projects, share context with AI agents",
   "type": "module",

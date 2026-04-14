@@ -14,5 +14,5 @@ Read these files to understand the API surface of connected projects.
 Use route-map.json for endpoint paths and methods.
 Use shared-types.json for response/request type shapes.
 
-Last synced: 2026-04-10T12:34:33.588Z
-Connected projects: grome, getgrome
+Last synced: 2026-04-14T13:23:54.232Z
+Connected projects: getgrome, grome

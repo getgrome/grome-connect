@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-10T12:34:33.588Z",
+  "generatedAt": "2026-04-14T13:23:54.232Z",
   "routes": [
     {
       "method": "GET",
@@ -727,14 +727,6 @@
       "method": "GET",
       "path": "/",
       "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/hono/dist/types/adapter/cloudflare-pages/conninfo.d.ts",
-      "params": [],
-      "confidence": 0.95
-    },
-    {
-      "method": "GET",
-      "path": "/",
-      "source": "code-oss-dev",
       "file": "test/mcp/node_modules/hono/dist/types/adapter/aws-lambda/conninfo.d.ts",
       "params": [],
       "confidence": 0.95
@@ -752,6 +744,14 @@
       "path": "/json",
       "source": "code-oss-dev",
       "file": "test/mcp/node_modules/hono/dist/types/adapter/aws-lambda/handler.d.ts",
+      "params": [],
+      "confidence": 0.95
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/hono/dist/types/adapter/cloudflare-pages/conninfo.d.ts",
       "params": [],
       "confidence": 0.95
     },
@@ -781,16 +781,6 @@
     },
     {
       "method": "GET",
-      "path": "/posts/:id",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/hono/dist/types/helper/route/index.d.ts",
-      "params": [
-        "id"
-      ],
-      "confidence": 0.95
-    },
-    {
-      "method": "GET",
       "path": "/proxy/:path",
       "source": "code-oss-dev",
       "file": "test/mcp/node_modules/hono/dist/types/helper/proxy/index.d.ts",
@@ -806,6 +796,16 @@
       "file": "test/mcp/node_modules/hono/dist/types/helper/proxy/index.d.ts",
       "params": [
         "path"
+      ],
+      "confidence": 0.95
+    },
+    {
+      "method": "GET",
+      "path": "/posts/:id",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/hono/dist/types/helper/route/index.d.ts",
+      "params": [
+        "id"
       ],
       "confidence": 0.95
     },
@@ -843,14 +843,6 @@
     },
     {
       "method": "GET",
-      "path": "/auth/page",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/hono/dist/types/middleware/jwt/jwt.d.ts",
-      "params": [],
-      "confidence": 0.95
-    },
-    {
-      "method": "GET",
       "path": "/page/about",
       "source": "code-oss-dev",
       "file": "test/mcp/node_modules/hono/dist/types/middleware/jsx-renderer/index.d.ts",
@@ -869,15 +861,15 @@
       "method": "GET",
       "path": "/auth/page",
       "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/hono/dist/types/middleware/jwk/jwk.d.ts",
+      "file": "test/mcp/node_modules/hono/dist/types/middleware/jwt/jwt.d.ts",
       "params": [],
       "confidence": 0.95
     },
     {
       "method": "GET",
-      "path": "/",
+      "path": "/auth/page",
       "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/hono/dist/types/middleware/logger/index.d.ts",
+      "file": "test/mcp/node_modules/hono/dist/types/middleware/jwk/jwk.d.ts",
       "params": [],
       "confidence": 0.95
     },
@@ -894,6 +886,14 @@
       "path": "/",
       "source": "code-oss-dev",
       "file": "test/mcp/node_modules/hono/dist/types/middleware/pretty-json/index.d.ts",
+      "params": [],
+      "confidence": 0.95
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/hono/dist/types/middleware/logger/index.d.ts",
       "params": [],
       "confidence": 0.95
     },
@@ -1445,38 +1445,6 @@
       "method": "GET",
       "path": "/",
       "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/metadata.js",
-      "params": [],
-      "confidence": 0.95
-    },
-    {
-      "method": "POST",
-      "path": "/",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/register.js",
-      "params": [],
-      "confidence": 0.95
-    },
-    {
-      "method": "POST",
-      "path": "/",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/revoke.js",
-      "params": [],
-      "confidence": 0.95
-    },
-    {
-      "method": "POST",
-      "path": "/",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/token.js",
-      "params": [],
-      "confidence": 0.95
-    },
-    {
-      "method": "GET",
-      "path": "/",
-      "source": "code-oss-dev",
       "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/esm/server/auth/handlers/metadata.js",
       "params": [],
       "confidence": 0.95
@@ -1507,35 +1475,51 @@
     },
     {
       "method": "GET",
-      "path": "/path",
-      "source": "grome",
-      "file": "src/extractors/routes.ts",
+      "path": "/",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/metadata.js",
       "params": [],
       "confidence": 0.95
     },
     {
       "method": "POST",
-      "path": "/path",
-      "source": "grome",
-      "file": "src/extractors/routes.ts",
+      "path": "/",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/register.js",
+      "params": [],
+      "confidence": 0.95
+    },
+    {
+      "method": "POST",
+      "path": "/",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/revoke.js",
+      "params": [],
+      "confidence": 0.95
+    },
+    {
+      "method": "POST",
+      "path": "/",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/token.js",
+      "params": [],
+      "confidence": 0.95
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "source": "getgrome",
+      "file": "src/components/FakeWorkspace.tsx",
       "params": [],
       "confidence": 0.95
     },
     {
       "method": "GET",
-      "path": "/path",
-      "source": "grome",
-      "file": "src/extractors/routes.ts",
+      "path": "/auth/callback",
+      "source": "getgrome",
+      "file": "src/app/auth/callback/route.ts",
       "params": [],
-      "confidence": 0.95
-    },
-    {
-      "method": "POST",
-      "path": "/path",
-      "source": "grome",
-      "file": "src/extractors/routes.ts",
-      "params": [],
-      "confidence": 0.95
+      "confidence": 0.98
     },
     {
       "method": "POST",
@@ -1547,11 +1531,45 @@
     },
     {
       "method": "GET",
-      "path": "/auth/callback",
+      "path": "/api/download/:arch",
       "source": "getgrome",
-      "file": "src/app/auth/callback/route.ts",
-      "params": [],
+      "file": "src/app/api/download/[arch]/route.ts",
+      "params": [
+        "arch"
+      ],
       "confidence": 0.98
+    },
+    {
+      "method": "GET",
+      "path": "/path",
+      "source": "grome-connect",
+      "file": "src/extractors/routes.ts",
+      "params": [],
+      "confidence": 0.95
+    },
+    {
+      "method": "POST",
+      "path": "/path",
+      "source": "grome-connect",
+      "file": "src/extractors/routes.ts",
+      "params": [],
+      "confidence": 0.95
+    },
+    {
+      "method": "GET",
+      "path": "/path",
+      "source": "grome-connect",
+      "file": "src/extractors/routes.ts",
+      "params": [],
+      "confidence": 0.95
+    },
+    {
+      "method": "POST",
+      "path": "/path",
+      "source": "grome-connect",
+      "file": "src/extractors/routes.ts",
+      "params": [],
+      "confidence": 0.95
     }
   ]
 }

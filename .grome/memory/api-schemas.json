@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-10T12:34:33.588Z",
+  "generatedAt": "2026-04-14T13:23:54.232Z",
   "schemas": [
     {
       "name": "A",
@@ -59,6 +59,26 @@
       "file": "remote/node_modules/@anthropic-ai/sandbox-runtime/dist/sandbox/sandbox-config.js",
       "shape": {
         "applyPath": "z.string().optional().describe('Path to the apply-seccomp binary')"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "A",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/v4/classic/schemas.d.ts",
+      "shape": {
+        "a": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "B",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/v4/classic/schemas.d.ts",
+      "shape": {
+        "b": "z.number()"
       },
       "confidence": 0.92
     },
@@ -869,134 +889,6 @@
       "confidence": 0.92
     },
     {
-      "name": "A",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/v4/classic/schemas.d.ts",
-      "shape": {
-        "a": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "B",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/v4/classic/schemas.d.ts",
-      "shape": {
-        "b": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "a",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "remote/node_modules/zod/src/v4/mini/tests/object.test.ts",
-      "shape": {
-        "name": "z.string()",
-        "age": "z.number()",
-        "points": "z.optional(z.number())"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "remote/node_modules/zod/src/v4/mini/tests/object.test.ts",
-      "shape": {
-        "a": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "a",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "remote/node_modules/zod/src/v4/mini/tests/object.test.ts",
-      "shape": {
-        "name": "z.string()",
-        "age": "z.number()",
-        "points": "z.optional(z.number())"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "userSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "remote/node_modules/zod/src/v4/mini/tests/object.test.ts",
-      "shape": {
-        "name": "z.string()",
-        "age": "z.number()",
-        "email": "z.optional(z.string())"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "Category",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "remote/node_modules/zod/src/v4/mini/tests/recursive-types.test.ts",
-      "shape": {
-        "name": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "LL",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "remote/node_modules/zod/src/v4/mini/tests/recursive-types.test.ts",
-      "shape": {
-        "value": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "Alazy",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "remote/node_modules/zod/src/v4/mini/tests/recursive-types.test.ts",
-      "shape": {
-        "val": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "Blazy",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "remote/node_modules/zod/src/v4/mini/tests/recursive-types.test.ts",
-      "shape": {
-        "val": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "Feature",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "remote/node_modules/zod/src/v4/mini/tests/recursive-types.test.ts",
-      "shape": {
-        "title": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "Output",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "remote/node_modules/zod/src/v4/mini/tests/recursive-types.test.ts",
-      "shape": {
-        "id": "z.int()",
-        "name": "z.string()",
-        "features": "z.array(Feature)"
-      },
-      "confidence": 0.92
-    },
-    {
       "name": "TaskMetadataSchema",
       "type": "zod",
       "source": "code-oss-dev",
@@ -1518,6 +1410,920 @@
         "uri": "z.string().startsWith('file://')",
         "name": "z.string().optional()",
         "_meta": "z.record(z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "aSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/discriminatedUnion.ts",
+      "shape": {
+        "type": "z.literal(\"a\")"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "bSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/discriminatedUnion.ts",
+      "shape": {
+        "type": "z.literal(\"b\")"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "cSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/discriminatedUnion.ts",
+      "shape": {
+        "type": "z.literal(\"c\")"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "dSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/discriminatedUnion.ts",
+      "shape": {
+        "type": "z.literal(\"d\")"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "short",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/object.ts",
+      "shape": {
+        "string": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "long",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/object.ts",
+      "shape": {
+        "string": "z.string()",
+        "number": "z.number()",
+        "boolean": "z.boolean()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "aSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/union.ts",
+      "shape": {
+        "type": "z.literal(\"a\")"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "bSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/union.ts",
+      "shape": {
+        "type": "z.literal(\"b\")"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "cSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/union.ts",
+      "shape": {
+        "type": "z.literal(\"c\")"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "dSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/union.ts",
+      "shape": {
+        "type": "z.literal(\"d\")"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "Test",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/all-errors.test.ts",
+      "shape": {
+        "f1": "z.number()",
+        "f2": "z.string().optional()",
+        "f3": "z.string().nullable()",
+        "f4": "z.array(z.object({ t: z.union([z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/array.test.ts",
+      "shape": {
+        "people": "z.string().array().min(2)"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "objectSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/async-parsing.test.ts",
+      "shape": {
+        "string": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "base",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/async-parsing.test.ts",
+      "shape": {
+        "hello": "z.string().refine((x) => x && x.length > 0)",
+        "foo": "z.string().refine((x) => x && x.length > 0)"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "base",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/async-parsing.test.ts",
+      "shape": {
+        "hello": "z.string()",
+        "foo": "z.number()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "base",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/async-parsing.test.ts",
+      "shape": {
+        "hello": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/catch.test.ts",
+      "shape": {
+        "fruit": "z.nativeEnum(Fruits).catch(Fruits.apple)"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/catch.test.ts",
+      "shape": {
+        "fruit": "z.enum([\"apple\""
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/catch.test.ts",
+      "shape": {
+        "string": "z.string()",
+        "obj": "z.object({",
+        "sub": "z.object({",
+        "lit": "z.literal(\"a\")",
+        "subCatch": "z.number().catch(23)",
+        "midCatch": "z.number().catch(42)",
+        "number": "z.number().catch(0)",
+        "bool": "z.boolean()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/catch.test.ts",
+      "shape": {
+        "age": "z.number()",
+        "name": "z.string().catch((ctx) => {"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "crazySchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/complex.test.ts",
+      "shape": {
+        "tuple": "z.tuple([",
+        "k1": "z.string().nullable()",
+        "k2": "z.number()",
+        "union": "z.array(z.union([z.literal(\"asdf\")",
+        "array": "z.array(z.number())",
+        "sumTransformer": "z.transformer(z.array(z.number())",
+        "sumMinLength": "z.array(z.number()).refine((arg) => arg.length > 5)",
+        "intersection": "z.intersection(z.object({ p1: z.string().optional()",
+        "p1": "z.number().optional()",
+        "enum": "z.intersection(z.enum([\"zero\"",
+        "nonstrict": "z.object({ points: z.number()",
+        "numProm": "z.promise(z.number())",
+        "lenfun": "z.function(z.tuple([z.string()])"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "fish",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/deepmasking.test.ts",
+      "shape": {
+        "name": "z.string()",
+        "props": "z.object({",
+        "color": "z.string()",
+        "numScales": "z.number()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/default.test.ts",
+      "shape": {
+        "fruit": "z.nativeEnum(Fruits).default(Fruits.apple)"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/default.test.ts",
+      "shape": {
+        "fruit": "z.enum([\"apple\""
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/error.test.ts",
+      "shape": {
+        "items": "z.array(z.string()).refine((data) => data.length > 3"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/error.test.ts",
+      "shape": {
+        "inner": "z.object({"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/error.test.ts",
+      "shape": {
+        "nullableObject": "z.object({ name: nameSchema",
+        "nullableArray": "z.array(nameSchema).nullable()",
+        "nullableTuple": "z.tuple([nameSchema",
+        "optionalObject": "z.object({ name: nameSchema",
+        "optionalArray": "z.array(nameSchema).optional()",
+        "optionalTuple": "z.tuple([nameSchema"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "obj",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/error.test.ts",
+      "shape": {
+        "x": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "methodObject",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/function.test.ts",
+      "shape": {
+        "property": "z.number()",
+        "method": "z.function().args(z.string()).returns(z.number())"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "methodObject",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/function.test.ts",
+      "shape": {
+        "property": "z.number()",
+        "method": "z.function().args(z.string()).returns(z.promise(z.number()))"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "BaseTeacher",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/intersection.test.ts",
+      "shape": {
+        "subjects": "z.array(z.string())"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "HasID",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/intersection.test.ts",
+      "shape": {
+        "id": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "Animal",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/intersection.test.ts",
+      "shape": {
+        "properties": "z.object({",
+        "is_animal": "z.boolean()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "Author",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/intersection.test.ts",
+      "shape": {
+        "posts": "z.array(",
+        "post_id": "z.number()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "Test",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/language-server.source.ts",
+      "shape": {
+        "f1": "z.number()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "Test",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "f1": "z.number()",
+        "f2": "z.string().optional()",
+        "f3": "z.string().nullable()",
+        "f4": "z.array(z.object({ t: z.union([z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "val",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "points": "z.number()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "val",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "points": "z.number()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "val",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "points": "z.number()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "val",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "points": "z.number()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "val",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "points": "z.number()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "o1",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "first": "z.string().optional()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "SNamedEntity",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "id": "z.string()",
+        "set": "z.string().optional()",
+        "unset": "z.string().optional()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "result",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "name": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "asdf",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "a": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "Enum",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "a": "z.string()",
+        "b": "z.string().optional()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "Partial",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "a": "z.string()",
+        "b": "z.string().optional()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "Picked",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "a": "z.string()",
+        "b": "z.string().optional()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "myType",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "anyOptional": "z.any().optional()",
+        "anyRequired": "z.any()",
+        "unknownOptional": "z.unknown().optional()",
+        "unknownRequired": "z.unknown()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "base",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "name": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "a": "z.date()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "Example",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "prop": "z.string()",
+        "opt": "z.number().optional()",
+        "arr": "z.string().array()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "personToExtend",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "firstName": "z.string()",
+        "lastName": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "a",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
+      "shape": {
+        "a": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "nested",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
+      "shape": {
+        "name": "z.string()",
+        "age": "z.number()",
+        "outer": "z.object({",
+        "inner": "z.string()",
+        "array": "z.array(z.object({ asdf: z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "mySchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
+      "shape": {
+        "name": "z.string()",
+        "array": "z.array(z.object({ asdf: z.string()",
+        "tuple": "z.tuple([z.object({ value: z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "object",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
+      "shape": {
+        "name": "z.string()",
+        "age": "z.number().optional()",
+        "field": "z.string().optional().default(\"asdf\")",
+        "nullableField": "z.number().nullable()",
+        "nullishField": "z.string().nullish()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "object",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
+      "shape": {
+        "name": "z.string()",
+        "age": "z.number().optional()",
+        "field": "z.string().optional().default(\"asdf\")",
+        "nullableField": "z.number().nullable()",
+        "nullishField": "z.string().nullish()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "object",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
+      "shape": {
+        "name": "z.string()",
+        "age": "z.number().optional()",
+        "field": "z.string().optional().default(\"asdf\")",
+        "country": "z.string().optional()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "object",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
+      "shape": {
+        "name": "z.string()",
+        "age": "z.number().optional()",
+        "field": "z.string().optional().default(\"asdf\")",
+        "country": "z.string().optional()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "object",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
+      "shape": {
+        "name": "z.string()",
+        "age": "z.number().optional()",
+        "field": "z.string().optional().default(\"asdf\")",
+        "country": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "object",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
+      "shape": {
+        "name": "z.string()",
+        "age": "z.number().optional()",
+        "field": "z.string().optional().default(\"asdf\")",
+        "country": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
+      "shape": {
+        "array": "z.string().array().min(42)"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "fish",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/pickomit.test.ts",
+      "shape": {
+        "name": "z.string()",
+        "age": "z.number()",
+        "nested": "z.object({"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/pickomit.test.ts",
+      "shape": {
+        "name": "z.string()",
+        "age": "z.number()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/preprocess.test.ts",
+      "shape": {
+        "nonEmptyStr": "z.string().min(1)",
+        "positiveNum": "z.preprocess((v) => Number(v)"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "BaseCategory",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/recursive.test.ts",
+      "shape": {
+        "name": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "obj1",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/refine.test.ts",
+      "shape": {
+        "first": "z.string()",
+        "second": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "validationSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/refine.test.ts",
+      "shape": {
+        "a": "z.string().refine((s): s is \"a\" => s === \"a\")"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v3/tests/transformer.test.ts",
+      "shape": {
+        "emptyStr": "z.string().default(\"def\")",
+        "zero": "z.number().default(5)",
+        "falseBoolean": "z.boolean().default(true)"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "A",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v4/classic/schemas.ts",
+      "shape": {
+        "a": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "B",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/zod/src/v4/classic/schemas.ts",
+      "shape": {
+        "b": "z.number()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "a",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "remote/node_modules/zod/src/v4/mini/tests/object.test.ts",
+      "shape": {
+        "name": "z.string()",
+        "age": "z.number()",
+        "points": "z.optional(z.number())"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "remote/node_modules/zod/src/v4/mini/tests/object.test.ts",
+      "shape": {
+        "a": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "a",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "remote/node_modules/zod/src/v4/mini/tests/object.test.ts",
+      "shape": {
+        "name": "z.string()",
+        "age": "z.number()",
+        "points": "z.optional(z.number())"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "userSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "remote/node_modules/zod/src/v4/mini/tests/object.test.ts",
+      "shape": {
+        "name": "z.string()",
+        "age": "z.number()",
+        "email": "z.optional(z.string())"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "Category",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "remote/node_modules/zod/src/v4/mini/tests/recursive-types.test.ts",
+      "shape": {
+        "name": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "LL",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "remote/node_modules/zod/src/v4/mini/tests/recursive-types.test.ts",
+      "shape": {
+        "value": "z.number()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "Alazy",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "remote/node_modules/zod/src/v4/mini/tests/recursive-types.test.ts",
+      "shape": {
+        "val": "z.number()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "Blazy",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "remote/node_modules/zod/src/v4/mini/tests/recursive-types.test.ts",
+      "shape": {
+        "val": "z.number()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "Feature",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "remote/node_modules/zod/src/v4/mini/tests/recursive-types.test.ts",
+      "shape": {
+        "title": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "Output",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "remote/node_modules/zod/src/v4/mini/tests/recursive-types.test.ts",
+      "shape": {
+        "id": "z.int()",
+        "name": "z.string()",
+        "features": "z.array(Feature)"
       },
       "confidence": 0.92
     },
@@ -2711,808 +3517,14 @@
       "confidence": 0.92
     },
     {
-      "name": "aSchema",
+      "name": "OAuthErrorResponseSchema",
       "type": "zod",
       "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/discriminatedUnion.ts",
+      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/auth.js",
       "shape": {
-        "type": "z.literal(\"a\")"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "bSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/discriminatedUnion.ts",
-      "shape": {
-        "type": "z.literal(\"b\")"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "cSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/discriminatedUnion.ts",
-      "shape": {
-        "type": "z.literal(\"c\")"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "dSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/discriminatedUnion.ts",
-      "shape": {
-        "type": "z.literal(\"d\")"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "short",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/object.ts",
-      "shape": {
-        "string": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "long",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/object.ts",
-      "shape": {
-        "string": "z.string()",
-        "number": "z.number()",
-        "boolean": "z.boolean()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "aSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/union.ts",
-      "shape": {
-        "type": "z.literal(\"a\")"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "bSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/union.ts",
-      "shape": {
-        "type": "z.literal(\"b\")"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "cSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/union.ts",
-      "shape": {
-        "type": "z.literal(\"c\")"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "dSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/benchmarks/union.ts",
-      "shape": {
-        "type": "z.literal(\"d\")"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "Test",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/all-errors.test.ts",
-      "shape": {
-        "f1": "z.number()",
-        "f2": "z.string().optional()",
-        "f3": "z.string().nullable()",
-        "f4": "z.array(z.object({ t: z.union([z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/array.test.ts",
-      "shape": {
-        "people": "z.string().array().min(2)"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "objectSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/async-parsing.test.ts",
-      "shape": {
-        "string": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "base",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/async-parsing.test.ts",
-      "shape": {
-        "hello": "z.string().refine((x) => x && x.length > 0)",
-        "foo": "z.string().refine((x) => x && x.length > 0)"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "base",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/async-parsing.test.ts",
-      "shape": {
-        "hello": "z.string()",
-        "foo": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "base",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/async-parsing.test.ts",
-      "shape": {
-        "hello": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/catch.test.ts",
-      "shape": {
-        "fruit": "z.nativeEnum(Fruits).catch(Fruits.apple)"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/catch.test.ts",
-      "shape": {
-        "fruit": "z.enum([\"apple\""
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/catch.test.ts",
-      "shape": {
-        "string": "z.string()",
-        "obj": "z.object({",
-        "sub": "z.object({",
-        "lit": "z.literal(\"a\")",
-        "subCatch": "z.number().catch(23)",
-        "midCatch": "z.number().catch(42)",
-        "number": "z.number().catch(0)",
-        "bool": "z.boolean()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/catch.test.ts",
-      "shape": {
-        "age": "z.number()",
-        "name": "z.string().catch((ctx) => {"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "crazySchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/complex.test.ts",
-      "shape": {
-        "tuple": "z.tuple([",
-        "k1": "z.string().nullable()",
-        "k2": "z.number()",
-        "union": "z.array(z.union([z.literal(\"asdf\")",
-        "array": "z.array(z.number())",
-        "sumTransformer": "z.transformer(z.array(z.number())",
-        "sumMinLength": "z.array(z.number()).refine((arg) => arg.length > 5)",
-        "intersection": "z.intersection(z.object({ p1: z.string().optional()",
-        "p1": "z.number().optional()",
-        "enum": "z.intersection(z.enum([\"zero\"",
-        "nonstrict": "z.object({ points: z.number()",
-        "numProm": "z.promise(z.number())",
-        "lenfun": "z.function(z.tuple([z.string()])"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "fish",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/deepmasking.test.ts",
-      "shape": {
-        "name": "z.string()",
-        "props": "z.object({",
-        "color": "z.string()",
-        "numScales": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/default.test.ts",
-      "shape": {
-        "fruit": "z.nativeEnum(Fruits).default(Fruits.apple)"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/default.test.ts",
-      "shape": {
-        "fruit": "z.enum([\"apple\""
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/error.test.ts",
-      "shape": {
-        "items": "z.array(z.string()).refine((data) => data.length > 3"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/error.test.ts",
-      "shape": {
-        "inner": "z.object({"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/error.test.ts",
-      "shape": {
-        "nullableObject": "z.object({ name: nameSchema",
-        "nullableArray": "z.array(nameSchema).nullable()",
-        "nullableTuple": "z.tuple([nameSchema",
-        "optionalObject": "z.object({ name: nameSchema",
-        "optionalArray": "z.array(nameSchema).optional()",
-        "optionalTuple": "z.tuple([nameSchema"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "obj",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/error.test.ts",
-      "shape": {
-        "x": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "methodObject",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/function.test.ts",
-      "shape": {
-        "property": "z.number()",
-        "method": "z.function().args(z.string()).returns(z.number())"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "methodObject",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/function.test.ts",
-      "shape": {
-        "property": "z.number()",
-        "method": "z.function().args(z.string()).returns(z.promise(z.number()))"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "BaseTeacher",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/intersection.test.ts",
-      "shape": {
-        "subjects": "z.array(z.string())"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "HasID",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/intersection.test.ts",
-      "shape": {
-        "id": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "Animal",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/intersection.test.ts",
-      "shape": {
-        "properties": "z.object({",
-        "is_animal": "z.boolean()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "Author",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/intersection.test.ts",
-      "shape": {
-        "posts": "z.array(",
-        "post_id": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "Test",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/language-server.source.ts",
-      "shape": {
-        "f1": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "Test",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "f1": "z.number()",
-        "f2": "z.string().optional()",
-        "f3": "z.string().nullable()",
-        "f4": "z.array(z.object({ t: z.union([z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "val",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "points": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "val",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "points": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "val",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "points": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "val",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "points": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "val",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "points": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "o1",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "first": "z.string().optional()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "SNamedEntity",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "id": "z.string()",
-        "set": "z.string().optional()",
-        "unset": "z.string().optional()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "result",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "name": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "asdf",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "a": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "Enum",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "a": "z.string()",
-        "b": "z.string().optional()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "Partial",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "a": "z.string()",
-        "b": "z.string().optional()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "Picked",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "a": "z.string()",
-        "b": "z.string().optional()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "myType",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "anyOptional": "z.any().optional()",
-        "anyRequired": "z.any()",
-        "unknownOptional": "z.unknown().optional()",
-        "unknownRequired": "z.unknown()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "base",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "name": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "a": "z.date()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "Example",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "prop": "z.string()",
-        "opt": "z.number().optional()",
-        "arr": "z.string().array()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "personToExtend",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "firstName": "z.string()",
-        "lastName": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "a",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/object.test.ts",
-      "shape": {
-        "a": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "nested",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
-      "shape": {
-        "name": "z.string()",
-        "age": "z.number()",
-        "outer": "z.object({",
-        "inner": "z.string()",
-        "array": "z.array(z.object({ asdf: z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "mySchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
-      "shape": {
-        "name": "z.string()",
-        "array": "z.array(z.object({ asdf: z.string()",
-        "tuple": "z.tuple([z.object({ value: z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "object",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
-      "shape": {
-        "name": "z.string()",
-        "age": "z.number().optional()",
-        "field": "z.string().optional().default(\"asdf\")",
-        "nullableField": "z.number().nullable()",
-        "nullishField": "z.string().nullish()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "object",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
-      "shape": {
-        "name": "z.string()",
-        "age": "z.number().optional()",
-        "field": "z.string().optional().default(\"asdf\")",
-        "nullableField": "z.number().nullable()",
-        "nullishField": "z.string().nullish()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "object",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
-      "shape": {
-        "name": "z.string()",
-        "age": "z.number().optional()",
-        "field": "z.string().optional().default(\"asdf\")",
-        "country": "z.string().optional()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "object",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
-      "shape": {
-        "name": "z.string()",
-        "age": "z.number().optional()",
-        "field": "z.string().optional().default(\"asdf\")",
-        "country": "z.string().optional()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "object",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
-      "shape": {
-        "name": "z.string()",
-        "age": "z.number().optional()",
-        "field": "z.string().optional().default(\"asdf\")",
-        "country": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "object",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
-      "shape": {
-        "name": "z.string()",
-        "age": "z.number().optional()",
-        "field": "z.string().optional().default(\"asdf\")",
-        "country": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/partials.test.ts",
-      "shape": {
-        "array": "z.string().array().min(42)"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "fish",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/pickomit.test.ts",
-      "shape": {
-        "name": "z.string()",
-        "age": "z.number()",
-        "nested": "z.object({"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/pickomit.test.ts",
-      "shape": {
-        "name": "z.string()",
-        "age": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/preprocess.test.ts",
-      "shape": {
-        "nonEmptyStr": "z.string().min(1)",
-        "positiveNum": "z.preprocess((v) => Number(v)"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "BaseCategory",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/recursive.test.ts",
-      "shape": {
-        "name": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "obj1",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/refine.test.ts",
-      "shape": {
-        "first": "z.string()",
-        "second": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "validationSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/refine.test.ts",
-      "shape": {
-        "a": "z.string().refine((s): s is \"a\" => s === \"a\")"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "schema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v3/tests/transformer.test.ts",
-      "shape": {
-        "emptyStr": "z.string().default(\"def\")",
-        "zero": "z.number().default(5)",
-        "falseBoolean": "z.boolean().default(true)"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "A",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v4/classic/schemas.ts",
-      "shape": {
-        "a": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "B",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/zod/src/v4/classic/schemas.ts",
-      "shape": {
-        "b": "z.number()"
+        "error": "z.string()",
+        "error_description": "z.string().optional()",
+        "error_uri": "z.string().optional()"
       },
       "confidence": 0.92
     },
@@ -3524,18 +3536,6 @@
       "shape": {
         "a": "z.string()",
         "b": "z.number()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "OAuthErrorResponseSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/auth.js",
-      "shape": {
-        "error": "z.string()",
-        "error_description": "z.string().optional()",
-        "error_uri": "z.string().optional()"
       },
       "confidence": 0.92
     },
@@ -5634,26 +5634,6 @@
       "confidence": 0.92
     },
     {
-      "name": "schema1",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "remote/node_modules/@github/copilot-sdk/node_modules/zod/src/v4/core/tests/extend.test.ts",
-      "shape": {
-        "email": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "baseSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "remote/node_modules/@github/copilot-sdk/node_modules/zod/src/v4/core/tests/extend.test.ts",
-      "shape": {
-        "name": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
       "name": "a",
       "type": "zod",
       "source": "code-oss-dev",
@@ -5780,6 +5760,26 @@
       "shape": {
         "firstName": "z.string()",
         "lastName": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "schema1",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "remote/node_modules/@github/copilot-sdk/node_modules/zod/src/v4/core/tests/extend.test.ts",
+      "shape": {
+        "email": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "baseSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "remote/node_modules/@github/copilot-sdk/node_modules/zod/src/v4/core/tests/extend.test.ts",
+      "shape": {
+        "name": "z.string()"
       },
       "confidence": 0.92
     },
@@ -7294,66 +7294,6 @@
       "confidence": 0.92
     },
     {
-      "name": "ClientAuthorizationParamsSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/authorize.js",
-      "shape": {
-        "client_id": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "RequestAuthorizationParamsSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/authorize.js",
-      "shape": {
-        "response_type": "z.literal('code')",
-        "code_challenge": "z.string()",
-        "code_challenge_method": "z.literal('S256')",
-        "scope": "z.string().optional()",
-        "state": "z.string().optional()",
-        "resource": "z.string().url().optional()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "TokenRequestSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/token.js",
-      "shape": {
-        "grant_type": "z.string()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "AuthorizationCodeGrantSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/token.js",
-      "shape": {
-        "code": "z.string()",
-        "code_verifier": "z.string()",
-        "redirect_uri": "z.string().optional()",
-        "resource": "z.string().url().optional()"
-      },
-      "confidence": 0.92
-    },
-    {
-      "name": "RefreshTokenGrantSchema",
-      "type": "zod",
-      "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/token.js",
-      "shape": {
-        "refresh_token": "z.string()",
-        "scope": "z.string().optional()",
-        "resource": "z.string().url().optional()"
-      },
-      "confidence": 0.92
-    },
-    {
       "name": "ClientAuthenticatedRequestSchema",
       "type": "zod",
       "source": "code-oss-dev",
@@ -7365,6 +7305,17 @@
       "confidence": 0.92
     },
     {
+      "name": "ClientAuthenticatedRequestSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/esm/server/auth/middleware/clientAuth.js",
+      "shape": {
+        "client_id": "z.string()",
+        "client_secret": "z.string().optional()"
+      },
+      "confidence": 0.92
+    },
+    {
       "name": "ClientAuthorizationParamsSchema",
       "type": "zod",
       "source": "code-oss-dev",
@@ -7425,13 +7376,62 @@
       "confidence": 0.92
     },
     {
-      "name": "ClientAuthenticatedRequestSchema",
+      "name": "ClientAuthorizationParamsSchema",
       "type": "zod",
       "source": "code-oss-dev",
-      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/esm/server/auth/middleware/clientAuth.js",
+      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/authorize.js",
       "shape": {
-        "client_id": "z.string()",
-        "client_secret": "z.string().optional()"
+        "client_id": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "RequestAuthorizationParamsSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/authorize.js",
+      "shape": {
+        "response_type": "z.literal('code')",
+        "code_challenge": "z.string()",
+        "code_challenge_method": "z.literal('S256')",
+        "scope": "z.string().optional()",
+        "state": "z.string().optional()",
+        "resource": "z.string().url().optional()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "TokenRequestSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/token.js",
+      "shape": {
+        "grant_type": "z.string()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "AuthorizationCodeGrantSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/token.js",
+      "shape": {
+        "code": "z.string()",
+        "code_verifier": "z.string()",
+        "redirect_uri": "z.string().optional()",
+        "resource": "z.string().url().optional()"
+      },
+      "confidence": 0.92
+    },
+    {
+      "name": "RefreshTokenGrantSchema",
+      "type": "zod",
+      "source": "code-oss-dev",
+      "file": "test/mcp/node_modules/@modelcontextprotocol/sdk/dist/cjs/server/auth/handlers/token.js",
+      "shape": {
+        "refresh_token": "z.string()",
+        "scope": "z.string().optional()",
+        "resource": "z.string().url().optional()"
       },
       "confidence": 0.92
     },

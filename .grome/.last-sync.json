@@ -3,7 +3,7 @@
     {
       "method": "GET",
       "path": "/path",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/extractors/routes.ts",
       "params": [],
       "confidence": 0.95
@@ -11,7 +11,7 @@
     {
       "method": "POST",
       "path": "/path",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/extractors/routes.ts",
       "params": [],
       "confidence": 0.95
@@ -19,7 +19,7 @@
     {
       "method": "GET",
       "path": "/path",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/extractors/routes.ts",
       "params": [],
       "confidence": 0.95
@@ -27,7 +27,7 @@
     {
       "method": "POST",
       "path": "/path",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/extractors/routes.ts",
       "params": [],
       "confidence": 0.95
@@ -36,7 +36,7 @@
   "types": [
     {
       "name": "GromeConfig",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/types.ts",
       "definition": "version: number; projectId: string; deny: string[]; allow?: string[]; extractors: { routes: boolean; types: boolean; schemas: boolean; handoffs: boolean; };",
       "exported": true,
@@ -44,7 +44,7 @@
     },
     {
       "name": "Connection",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/types.ts",
       "definition": "projectId: string; name: string; path: string; linked: string; // ISO timestamp",
       "exported": true,
@@ -52,7 +52,7 @@
     },
     {
       "name": "ConnectionsFile",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/types.ts",
       "definition": "connections: Connection[];",
       "exported": true,
@@ -60,7 +60,7 @@
     },
     {
       "name": "ExtractedRoute",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/types.ts",
       "definition": "method: string; path: string; source: string; file: string; params: string[]; response?: string; confidence: number;",
       "exported": true,
@@ -68,7 +68,7 @@
     },
     {
       "name": "ExtractedType",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/types.ts",
       "definition": "name: string; source: string; file: string; definition: string; exported: boolean; confidence: number;",
       "exported": true,
@@ -76,7 +76,7 @@
     },
     {
       "name": "ExtractedSchema",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/types.ts",
       "definition": "name: string; type: 'zod' | 'prisma'; source: string; file: string; shape: Record<string, string>; confidence: number;",
       "exported": true,
@@ -84,7 +84,7 @@
     },
     {
       "name": "ExtractionResult",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/types.ts",
       "definition": "routes: ExtractedRoute[]; types: ExtractedType[]; schemas: ExtractedSchema[]; framework: string | null;",
       "exported": true,
@@ -92,7 +92,7 @@
     },
     {
       "name": "RouteMapFile",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/types.ts",
       "definition": "version: number; generatedAt: string; routes: ExtractedRoute[];",
       "exported": true,
@@ -100,7 +100,7 @@
     },
     {
       "name": "SharedTypesFile",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/types.ts",
       "definition": "version: number; generatedAt: string; types: ExtractedType[];",
       "exported": true,
@@ -108,7 +108,7 @@
     },
     {
       "name": "ApiSchemasFile",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/types.ts",
       "definition": "version: number; generatedAt: string; schemas: ExtractedSchema[];",
       "exported": true,
@@ -116,7 +116,7 @@
     },
     {
       "name": "ProjectManifest",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/types.ts",
       "definition": "version: number; generatedAt: string; thisProject: string; connections: Array<Connection & { framework: string | null }>; stats: { routes: number; types: number; schemas: number; };",
       "exported": true,
@@ -124,7 +124,7 @@
     },
     {
       "name": "Handoff",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/types.ts",
       "definition": "id: string; from: string;           // project name that created it fromPath: string;       // project root path type: 'feature-complete' | 'breaking-change' | 'dependency-update' | 'migration' | 'note'; summary: string;        // one-line for agents to scan quickly context: { endpoints?: Array<{ method: string; path: string; request?: string; response?: string }>; files_changed?: string[]; breaking_changes?: string[]; dependencies_added?: string[]; dependencies_removed?: string[]; env_vars_added?: string[]; env_vars_removed?: string[]; migration_steps?: string[]; notes?: string; }; status: 'open' | 'acknowledged' | 'done'; created: string;        // ISO timestamp acknowledged_by: string[];  // project names that have seen it",
       "exported": true,
@@ -132,23 +132,15 @@
     },
     {
       "name": "Framework",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/types.ts",
       "definition": "'express' | 'next' | 'fastify' | 'hono' | 'koa' | null",
       "exported": true,
       "confidence": 0.9
     },
     {
-      "name": "SecretMatch",
-      "source": "grome",
-      "file": "src/core/SecretScanner.ts",
-      "definition": "name: string; value: string;       // the matched text (truncated for safety) field: string;       // which field it was found in",
-      "exported": true,
-      "confidence": 0.98
-    },
-    {
       "name": "Foo",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/extractors/types.ts",
       "definition": "...",
       "exported": true,
@@ -156,13 +148,21 @@
     },
     {
       "name": "Foo",
-      "source": "grome",
+      "source": "grome-connect",
       "file": "src/extractors/types.ts",
       "definition": "...",
       "exported": true,
       "confidence": 0.95
+    },
+    {
+      "name": "SecretMatch",
+      "source": "grome-connect",
+      "file": "src/core/SecretScanner.ts",
+      "definition": "name: string; value: string;       // the matched text (truncated for safety) field: string;       // which field it was found in",
+      "exported": true,
+      "confidence": 0.98
     }
   ],
   "schemas": [],
-  "timestamp": "2026-04-10T12:34:33.586Z"
+  "timestamp": "2026-04-14T13:23:54.232Z"
 }

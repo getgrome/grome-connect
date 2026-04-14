@@ -19,7 +19,7 @@ const AGENT_CONFIG_FILES = [
 /**
  * Build a project-specific injection block with actual connection details.
  */
-function buildInjection(projectRoot: string): string {
+export function buildInjection(projectRoot: string): string {
   const connections = ConnectionManager.readConnections(projectRoot);
   const projectName = ConnectionManager.getProjectName(projectRoot);
 

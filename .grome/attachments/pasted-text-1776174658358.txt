@@ -1,0 +1,30 @@
+ but will doing npm i overwrite anything? take a look at grome-connect o see                                                                                                                     
+                                                                                                                                                                                                  
+  Searched for 1 pattern, read 1 file, listed 1 directory (ctrl+o to expand)                                                                                                                      
+                                                                                                                                                                                                  
+⏺ No overwrite risk. Two safeguards in grome-connect:                                                                                                                                             
+                                                                                                                                                                                                  
+  1. npm i itself just drops the package in node_modules/ + adds a package.json entry. It never touches .grome/ or your CLAUDE.md/AGENTS.md. Those only change when the user explicitly runs grome
+   sync / grome link.                                                                                                                                                                             
+  2. When sync runs, AgentConfigInjector (src/core/AgentConfigInjector.ts:263) uses <!-- grome:start --> / <!-- grome:end --> markers. If markers exist → it replaces only what's between them. No
+   markers → it appends. Your existing CLAUDE.md content is always preserved.                                                                                                                     
+                                                                                                                                                                                                  
+  But I hit one real problem worth flagging: package.json says "bin": { "grome": "bin/cli.js" }. The bin is still grome, not grome-connect. Which means:                                          
+                                                                  
+  - npx grome-connect sync — probably fails (or warns), since npx looks for a bin matching the package name                                                                                       
+  - npm i -g grome-connect then grome sync — works, but the command is grome not grome-connect
+                                                                                                                                                                                                  
+  So all the docs we just rewrote to say npx grome-connect <cmd> won't actually run. You need to either:                                                                                          
+  - Rename the bin to grome-connect in grome-connect's package.json (clean, matches docs), or                                                                                                     
+  - Revert docs back to npx grome (but that conflicts with the blocked npm name)                                                                                                                  
+                                                                                
+  Want me to flag this back to the grome-connect repo via a handoff, or just revert the docs?                                                                                                     
+                                                                                                                                                                                                  
+✻ Churned for 37s                                                                                                                                                                                 
+                                                                                                                                                                                                  
+❯ is this a grome-conenct issue or the ide issue?                                                                                                                                                 
+                                                                                                                                                                                                  
+⏺ grome-connect issue. The IDE doesn't care — it bundles dist/index.cjs and calls it directly in-process, never via the bin. The bin name only matters for terminal users running the CLI.        
+                                                                                                                                                                                                  
+  Fix lives in /Volumes/RLEE-4TB/Desktop-External/grome-all/grome-connect/package.json: change "bin": { "grome": "bin/cli.js" } → "bin": { "grome-connect": "bin/cli.js" }, republish. Then npx   
+  grome-connect <cmd> works and our docs are accurate.  
