@@ -38,6 +38,18 @@ export function buildInjection(projectRoot: string): string {
     return `- **${name}**${framework} — \`${conn.path}\``;
   }).join('\n');
 
+  // All project names (this project + peers) for the tracking table template
+  const allProjectNames = [
+    projectName,
+    ...connections.connections.map((c) => c.name || c.path.split('/').pop() || ''),
+  ].filter(Boolean);
+  const trackingTable = [
+    '| Project | Read | Done |',
+    '| ------- | ---- | ---- |',
+    ...allProjectNames.map((n) => `| ${n} | [ ] | [ ] |`),
+  ].join('\n');
+  const peerExample = connections.connections[0]?.name ?? 'other-project';
+
   return `${START_MARKER}
 ## Connected Workspaces (Grome Connect)
 
@@ -57,19 +69,24 @@ Cross-project context is in \`.grome/memory/\`. **Read these files when working 
 
 ### Handoffs (cross-project)
 
-Handoffs live in \`.grome/memory/handoffs/\`. They are detailed briefing documents written by agents in *other* connected projects about changes that affect this project.
+Handoffs live in \`.grome/memory/handoffs/\`. They are briefing documents written by agents in connected projects about changes that affect other projects.
 
-**Do NOT read handoffs automatically on every prompt.** Read them **on demand** — when the user says things like "catch me up", "is there a handoff", "what did the other team change", "read the latest from \`<other project>\`", or similar. Read every \`.md\` file in the handoffs directory, see which ones are still \`Status: open\`, and act on anything relevant. After reading and acting on a handoff, add \`Acknowledged by ${projectName}\` at the bottom.
+**The index is authoritative for "is there a handoff for me?"** Open \`.grome/memory/handoffs/_index.md\` *first*. It is auto-generated per project and lists only handoffs addressed to **this** project (\`${projectName}\`) — either directly, or addressed to \`all\`. Do NOT read every file in the handoffs directory; read only the ones the index points to.
 
-**Writing handoffs:** When the user says "write a handoff", "let the backend team know", "hand this off to \`<other project>\`" or similar after changes that affect connected projects, write a new \`.md\` to \`.grome/memory/handoffs/\`. Then run \`grome sync\` to distribute it.
+**When to read:** on demand — when the user asks things like "catch me up", "is there a handoff", "what did the other team change", "read the latest from \`${peerExample}\`", or similar. Not automatically on every prompt.
+
+**After reading a handoff,** open its \`.md\` file and find the per-recipient tracking table near the bottom. Flip your project's **Read** cell from \`[ ]\` to \`[x]\`. When you've *implemented* the action items (not just read them), flip **Done** too. The index regenerates these on the next \`grome sync\`.
+
+**Writing handoffs:** when the user says "write a handoff", "let \`${peerExample}\` know", "hand this off to \`<other project>\`", or similar after changes that affect connected projects, write a new \`.md\` to \`.grome/memory/handoffs/\` using the template below, then run \`grome sync\` to distribute it. The **To** field decides who sees it in their index — use a specific project name, a comma-separated list, or \`all\`.
 
 A handoff should be a **complete briefing** that another agent can read and immediately understand what happened, why it matters, and exactly what to do. Write it as if you're handing off to a colleague who has zero context.
 
-Handoff file format (\`.grome/memory/handoffs/<timestamp>-<slug>.md\`):
+Handoff file format (\`.grome/memory/handoffs/<YYYY-MM-DD-HHMM>-<slug>.md\`):
 \`\`\`markdown
 # Handoff: <clear title of what changed>
 
-**From:** <this project name>
+**From:** ${projectName}
+**To:** ${peerExample}
 **Date:** <ISO date>
 **Type:** feature-complete | breaking-change | dependency-update | migration | note
 **Status:** open
@@ -106,6 +123,10 @@ What needs to be updated? What new capabilities are available?>
 ## Additional Context
 
 <Any other details that would help the receiving agent.>
+
+## Tracking
+
+${trackingTable}
 \`\`\`
 
 **Key principles for handoffs:**
@@ -114,6 +135,7 @@ What needs to be updated? What new capabilities are available?>
 3. Include **action items** — what exactly should the receiving project do
 4. Explain **why** the change was made, not just what changed
 5. **NEVER include secret values** — env var names only
+6. Always include **To** and the **Tracking** table so the index can filter correctly
 
 **The user may simply say "write a handoff about X" or "hand this off to the backend" or "let the frontend team know about this".** These all mean: write a handoff document. The user does not need to know the file format or mention Grome — just interpret their intent and write the briefing.
 

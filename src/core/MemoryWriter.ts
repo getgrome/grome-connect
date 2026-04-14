@@ -22,7 +22,6 @@ import { extractTypes } from '../extractors/types.js';
 import { extractSchemas } from '../extractors/schemas.js';
 import { detectFramework } from '../extractors/detection.js';
 import { atomicWrite, ensureDir } from '../utils.js';
-import { AutoHandoff } from './AutoHandoff.js';
 import micromatch from 'micromatch';
 
 interface ProjectScanResult {
@@ -83,6 +82,94 @@ const INTERNAL_NAME_PATTERNS = [
   /^Private/,
 ];
 
+/**
+ * Parse the header fields out of a markdown handoff. The format is
+ * permissive — we expect a `# Title`, then bold-labeled fields like
+ * `**From:**`, `**To:**`, `**Type:**`. Missing fields fall back to
+ * sensible defaults so an index can still be rendered.
+ */
+function parseHandoffHeader(content: string): {
+  from: string;
+  to: 'all' | string[];
+  type: string;
+  summary: string;
+} {
+  const field = (label: string): string | undefined => {
+    const re = new RegExp(`\\*\\*${label}:\\*\\*\\s*([^\\n]+)`, 'i');
+    const m = content.match(re);
+    return m ? m[1].trim() : undefined;
+  };
+
+  const from = field('From') ?? 'unknown';
+  const type = field('Type') ?? 'note';
+  const toRaw = field('To') ?? 'all';
+
+  const to: 'all' | string[] =
+    toRaw.toLowerCase() === 'all'
+      ? 'all'
+      : toRaw.split(',').map((s) => s.trim()).filter(Boolean);
+
+  // Summary: first non-heading, non-blank line after the header block,
+  // truncated for the table.
+  const lines = content.split('\n');
+  let summary = '';
+  let inHeader = true;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (inHeader) {
+      if (trimmed.startsWith('#') || trimmed.startsWith('**')) continue;
+      inHeader = false;
+    }
+    if (
+      trimmed.startsWith('#') ||
+      trimmed.startsWith('>') ||
+      trimmed.startsWith('|') ||
+      trimmed.startsWith('-')
+    ) continue;
+    summary = trimmed;
+    break;
+  }
+  if (summary.length > 140) summary = summary.slice(0, 137) + '...';
+
+  return { from, to, type, summary: summary || '—' };
+}
+
+/**
+ * Read the per-recipient tracking row for a project out of a handoff's
+ * markdown table. Expected format near the bottom of the file:
+ *
+ * ```
+ * | Project  | Read | Done |
+ * | -------- | ---- | ---- |
+ * | grome    | [x]  | [ ]  |
+ * | getgrome | [ ]  | [ ]  |
+ * ```
+ *
+ * If the project isn't in the table (or the table is missing), both
+ * values are reported as false — the file is effectively unread.
+ */
+function readTrackingRow(
+  content: string,
+  projectName: string
+): { read: boolean; implemented: boolean } {
+  const lines = content.split('\n');
+  const rowRe = new RegExp(`^\\|\\s*${escapeForRegex(projectName)}\\s*\\|`, 'i');
+  for (const line of lines) {
+    if (!rowRe.test(line)) continue;
+    const cells = line.split('|').map((c) => c.trim());
+    // cells[0] is '' before first |, cells[1] is project, cells[2] is read, cells[3] is done
+    const read = /\[\s*x\s*\]/i.test(cells[2] ?? '');
+    const implemented = /\[\s*x\s*\]/i.test(cells[3] ?? '');
+    return { read, implemented };
+  }
+  return { read: false, implemented: false };
+}
+
+function escapeForRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export class MemoryWriter {
   /**
    * Scan all connected projects and write memory files everywhere.
@@ -98,7 +185,6 @@ export class MemoryWriter {
     totalTypes: number;
     totalSchemas: number;
     updatedConfigs: Map<string, string[]>;
-    autoHandoffs: import('../types.js').Handoff[];
   }> {
     const resolvedRoot = path.resolve(projectRoot);
     const allRoots = ConnectionManager.getAllProjectRoots(resolvedRoot);
@@ -152,20 +238,6 @@ export class MemoryWriter {
       schemas: originalTotals.schemas > allSchemas.length,
     };
 
-    // Phase 1.5: Auto-handoff — diff against previous sync and generate handoffs for changes
-    const autoHandoffs: import('../types.js').Handoff[] = [];
-    for (const result of scanResults) {
-      try {
-        const handoffs = await AutoHandoff.processSync(
-          result.root,
-          result.extraction.routes,
-          result.extraction.types,
-          result.extraction.schemas,
-        );
-        autoHandoffs.push(...handoffs);
-      } catch { /* auto-handoff is best-effort */ }
-    }
-
     // Phase 2: Write memory to every project
     const now = new Date().toISOString();
     const updatedConfigs = new Map<string, string[]>();
@@ -195,10 +267,11 @@ export class MemoryWriter {
       }
     }
 
-    // Phase 4: Propagate user-written markdown handoffs across all projects.
-    // Auto-handoff JSON files are distributed in Phase 1.5; this picks up
-    // `.md` briefings that agents write by hand per CLAUDE.md conventions.
+    // Phase 4: Propagate user-written markdown handoffs across all projects,
+    // then regenerate per-project _index.md so agents can quickly find the
+    // handoffs addressed to them without opening every file.
     MemoryWriter.propagateMarkdownHandoffs(allRoots);
+    MemoryWriter.regenerateHandoffIndexes(allRoots);
 
     return {
       projects: scanResults,
@@ -206,7 +279,6 @@ export class MemoryWriter {
       totalTypes: allTypes.length,
       totalSchemas: allSchemas.length,
       updatedConfigs,
-      autoHandoffs,
     };
   }
 
@@ -413,6 +485,66 @@ Connected projects: ${connectedNames}
           }
         } catch { /* skip unreadable */ }
       }
+    }
+  }
+
+  /**
+   * Regenerate `_index.md` in every project's handoffs directory. The index
+   * is a filtered table showing only handoffs addressed to that project (or
+   * `all`), so agents can answer "is there a handoff for me?" without
+   * opening every file. Source of truth is the individual `.md` files; the
+   * index is fully derived and safe to re-generate on every sync.
+   */
+  private static regenerateHandoffIndexes(allRoots: string[]): void {
+    for (const root of allRoots) {
+      const projectName = ConnectionManager.getProjectName(root);
+      const dir = path.join(ConnectionManager.getMemoryDir(root), 'handoffs');
+      if (!fs.existsSync(dir)) continue;
+
+      const rows: string[] = [];
+      for (const name of fs.readdirSync(dir).sort()) {
+        if (!name.endsWith('.md') || name === '_index.md') continue;
+        const absPath = path.join(dir, name);
+        let content: string;
+        try { content = fs.readFileSync(absPath, 'utf-8'); } catch { continue; }
+
+        const parsed = parseHandoffHeader(content);
+        const targetsThisProject =
+          parsed.to === 'all' || parsed.to.includes(projectName);
+        if (!targetsThisProject) continue;
+
+        const status = readTrackingRow(content, projectName);
+        rows.push(
+          `| [\`${name}\`](./${name}) | ${parsed.from} | ${parsed.type} | ${
+            parsed.summary.replace(/\|/g, '\\|')
+          } | ${status.read ? 'x' : ' '} | ${status.implemented ? 'x' : ' '} |`
+        );
+      }
+
+      const body = rows.length > 0
+        ? [
+          `# Handoffs for \`${projectName}\``,
+          '',
+          '> Auto-generated by `grome sync`. Do not edit — re-run sync to refresh.',
+          '> Source of truth is the individual `.md` files. Update the tracking',
+          '> table inside each handoff when you read or implement it; this index',
+          '> will reflect the change on the next sync.',
+          '',
+          '| Handoff | From | Type | Summary | Read | Done |',
+          '| ------- | ---- | ---- | ------- | ---- | ---- |',
+          ...rows,
+          '',
+        ].join('\n')
+        : [
+          `# Handoffs for \`${projectName}\``,
+          '',
+          'No open handoffs addressed to this project.',
+          '',
+        ].join('\n');
+
+      try {
+        fs.writeFileSync(path.join(dir, '_index.md'), body);
+      } catch { /* skip */ }
     }
   }
 

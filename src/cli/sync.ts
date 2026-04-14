@@ -57,20 +57,6 @@ export async function syncCommand(): Promise<void> {
       }
     }
 
-    // Show auto-handoffs
-    if (result.autoHandoffs && result.autoHandoffs.length > 0) {
-      console.log(`\n${color.bold('Auto-handoffs generated:')}`);
-      for (const h of result.autoHandoffs) {
-        const typeColor = h.type === 'breaking-change' ? color.red : color.cyan;
-        console.log(`  ${symbols.arrow} ${typeColor(h.type)}: ${h.summary}`);
-        if (h.context.breaking_changes?.length) {
-          console.log(`    ${color.red('Breaking:')} ${h.context.breaking_changes.join(', ')}`);
-        }
-      }
-    } else {
-      console.log(`\n${color.dim('No cross-project changes detected.')}`);
-    }
-
     console.log(
       `\n${symbols.success} ${color.green('Synced')} ${result.totalRoutes} routes, ${result.totalTypes} types, ${result.totalSchemas} schemas\n`
     );

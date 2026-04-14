@@ -80,12 +80,6 @@ async function doSync(projectRoot: string): Promise<void> {
     console.log(
       `  ${symbols.success} ${color.green('Synced')} ${result.totalRoutes} routes, ${result.totalTypes} types, ${result.totalSchemas} schemas ${color.dim(`(${elapsed}s)`)}`
     );
-    if (result.autoHandoffs?.length) {
-      for (const h of result.autoHandoffs) {
-        const icon = h.type === 'breaking-change' ? symbols.warning : symbols.arrow;
-        console.log(`  ${icon} Handoff: ${h.summary}`);
-      }
-    }
   } catch (err) {
     console.error(`  ${symbols.error} ${color.red('Sync failed:')} ${(err as Error).message}`);
   }
