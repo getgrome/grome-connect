@@ -10,3 +10,4 @@ coverage/
 .npmrc
 *.tgz
 .tarballs/
+.grome/
