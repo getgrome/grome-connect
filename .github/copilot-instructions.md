@@ -22,7 +22,7 @@ A **thread** is the single primitive for anything an agent in one project wants 
 
 Threads live in `.grome/threads/`. Each thread is one markdown file. Agents append messages over time; nothing is ever edited after it's posted.
 
-**Check `_index.md` first.** It is auto-generated per project and lists only threads addressed to **this** project (`grome-connect`) — either directly by name or addressed to `all`. Columns: Thread, From, To, Status, Progress, Last speaker. Do not read every file in the threads directory; read only what the index points to.
+**Check `_index.md` first.** It is auto-generated per project and lists **every** thread in the workspace — not just the ones addressed to you. Columns: Thread, From, To, Status, Progress, Last speaker. You filter mentally via the **To** column: rows with `grome-connect` or `all` are yours; others are informational (you may read them, but the action isn't on you). Do not open individual thread files blindly — read the index, pick the rows that matter, then open those.
 
 **When to read:** on demand — when the user asks things like "catch me up", "is there anything from `grome`", "what did the other team say", "read the latest thread", or similar. Not automatically on every prompt.
 

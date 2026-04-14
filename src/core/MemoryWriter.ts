@@ -605,9 +605,6 @@ Connected projects: ${connectedNames}
         } catch { continue; }
 
         const parsed = parseThreadHeader(content);
-        const targetsThisProject =
-          parsed.to === 'all' || parsed.to.includes(projectName);
-        if (!targetsThisProject) continue;
 
         const { done, total } = countChecklist(content);
         const progress = total === 0 ? '—' : done === total ? '✓' : `${done}/${total}`;
