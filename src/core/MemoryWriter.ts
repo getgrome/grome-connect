@@ -146,6 +146,11 @@ export class MemoryWriter {
       }
     }
 
+    // Phase 4: Propagate user-written markdown handoffs across all projects.
+    // Auto-handoff JSON files are distributed in Phase 1.5; this picks up
+    // `.md` briefings that agents write by hand per CLAUDE.md conventions.
+    MemoryWriter.propagateMarkdownHandoffs(allRoots);
+
     return {
       projects: scanResults,
       totalRoutes: allRoutes.length,
@@ -305,6 +310,48 @@ Last synced: ${data.now}
 Connected projects: ${connectedNames}
 `;
     await atomicWrite(path.join(memoryDir, 'README.md'), readme);
+  }
+
+  /**
+   * Collect every `.md` handoff across all projects and copy any that are
+   * missing in a target project. Uses modified-time as a tiebreaker when a
+   * filename exists in multiple projects.
+   */
+  private static propagateMarkdownHandoffs(allRoots: string[]): void {
+    type Entry = { absPath: string; mtimeMs: number };
+    const byName = new Map<string, Entry>();
+
+    for (const root of allRoots) {
+      const dir = path.join(ConnectionManager.getMemoryDir(root), 'handoffs');
+      if (!fs.existsSync(dir)) continue;
+      for (const name of fs.readdirSync(dir)) {
+        if (!name.endsWith('.md')) continue;
+        const absPath = path.join(dir, name);
+        let mtimeMs = 0;
+        try { mtimeMs = fs.statSync(absPath).mtimeMs; } catch { continue; }
+        const prev = byName.get(name);
+        if (!prev || mtimeMs > prev.mtimeMs) {
+          byName.set(name, { absPath, mtimeMs });
+        }
+      }
+    }
+
+    if (byName.size === 0) return;
+
+    for (const root of allRoots) {
+      const dir = path.join(ConnectionManager.getMemoryDir(root), 'handoffs');
+      ensureDir(dir);
+      for (const [name, entry] of byName) {
+        const target = path.join(dir, name);
+        if (target === entry.absPath) continue;
+        try {
+          const existing = fs.existsSync(target) ? fs.statSync(target).mtimeMs : -1;
+          if (entry.mtimeMs > existing) {
+            fs.copyFileSync(entry.absPath, target);
+          }
+        } catch { /* skip unreadable */ }
+      }
+    }
   }
 
   /**
