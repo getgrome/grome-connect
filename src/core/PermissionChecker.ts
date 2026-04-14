@@ -14,12 +14,81 @@ const UNCONDITIONAL_DENY = [
   '**/credentials.*',
   '**/*.pem',
   '**/*.key',
-  // Dependencies
+  '**/*.p12',
+  '**/*.pfx',
+
+  // JS / TS dependencies + tooling
   '**/node_modules/**',
+  '**/.yarn/**',
+  '**/.pnp.*',
+  '**/.pnpm-store/**',
+  '**/pnpm-store/**',
+  '**/bower_components/**',
+  '**/jspm_packages/**',
+
+  // Go / PHP / Composer vendored deps
+  '**/vendor/**',
+
+  // Python
+  '**/__pycache__/**',
+  '**/.venv/**',
+  '**/venv/**',
+  '**/.tox/**',
+  '**/.nox/**',
+  '**/.pytest_cache/**',
+  '**/.mypy_cache/**',
+  '**/.ruff_cache/**',
+  '**/.pytype/**',
+  '**/site-packages/**',
+  '**/*.egg-info/**',
+  '**/*.egg/**',
+  '**/eggs/**',
+  '**/htmlcov/**',
+  '**/.ipynb_checkpoints/**',
+  '**/*.pyc',
+  '**/*.pyo',
+  '**/*.pyd',
+
+  // Ruby
+  '**/.bundle/**',
+  '**/*.gem',
+
+  // JVM (Java / Kotlin / Scala)
+  '**/.gradle/**',
+  '**/.m2/**',
+  '**/*.class',
+  '**/*.jar',
+  '**/*.war',
+  '**/*.ear',
+
+  // Rust
+  '**/*.rlib',
+
+  // .NET (compiled output only — bin/ and obj/ conflict with legitimate
+  // usages in Node projects, so we rely on file extensions instead)
+  '**/*.dll',
+  '**/*.pdb',
+
+  // Native / compiled
+  '**/*.o',
+  '**/*.a',
+  '**/*.so',
+  '**/*.dylib',
+  '**/*.exe',
+  '**/*.wasm',
+
+  // iOS / macOS / Android
+  '**/Pods/**',
+  '**/DerivedData/**',
+  '**/*.xcworkspace/**',
+  '**/*.xcodeproj/**',
+  '**/*.framework/**',
+
   // VCS / tooling
   '**/.git/**',
   '**/.hg/**',
   '**/.svn/**',
+
   // Build artifacts
   '**/dist/**',
   '**/build/**',
@@ -35,13 +104,41 @@ const UNCONDITIONAL_DENY = [
   '**/.nuxt/**',
   '**/.output/**',
   '**/coverage/**',
-  '**/__pycache__/**',
+
+  // IaC / serverless / deploy
+  '**/.terraform/**',
+  '**/.serverless/**',
+  '**/cdk.out/**',
+
   // Minified / sourcemaps
   '**/*.min.js',
   '**/*.min.css',
   '**/*.map',
-  // VS Code / Electron specific
+
+  // Archives / large binaries
+  '**/*.zip',
+  '**/*.tar',
+  '**/*.tar.gz',
+  '**/*.tgz',
+  '**/*.gz',
+  '**/*.rar',
+  '**/*.7z',
+
+  // Editors / IDE caches
   '**/.vscode-test/**',
+  '**/.history/**',
+  '**/.fleet/**',
+
+  // OS cruft
+  '**/.DS_Store',
+  '**/Thumbs.db',
+
+  // Logs / temp
+  '**/*.log',
+  '**/tmp/**',
+  '**/temp/**',
+  '**/logs/**',
+
   // Grome internals
   '**/.grome/attachments/**',
 ];
