@@ -141,6 +141,66 @@ ${trackingTable}
 
 **Proactively suggest a handoff** after making changes to API routes, shared types, schemas, or anything connected projects depend on. Say something like: "I made changes to the API that affect connected projects. Want me to write a handoff so the other agents know?"
 
+### Conversations (cross-project dialog)
+
+Conversations live in \`.grome/memory/conversations/\`. Unlike handoffs — which are one-way briefings — a conversation is a **multi-turn dialog** between agents in connected projects. Use one when you need to reach consensus on something ambiguous, ask a specific question, or negotiate a change, instead of assuming or making the user the broker.
+
+**Check \`_index.md\` first.** It lists all open conversations with topic, status, started-by, and most-recent speaker. If there's a conversation relevant to what you're working on, join it — don't start a parallel one.
+
+**When the user refers to "the conversation" or "what they said" ambiguously**, do not guess. Read \`_index.md\`, then list the matching open conversations back to the user (title + last-speaker + last-activity) and ask which one they mean. Only open a conversation file once you know which one the user wants.
+
+**Starting a conversation:** create \`.grome/memory/conversations/<YYYY-MM-DD-HHMM>-<slug>.md\`:
+
+\`\`\`markdown
+# Conversation: <clear topic statement or question>
+
+**Started by:** ${projectName}
+**Status:** open
+**Started:** <ISO timestamp>
+
+---
+
+## ${projectName} @ <ISO timestamp>
+
+<Your opening message. State the question or proposal directly. Include enough
+context that the other agent can reply without reading your whole codebase.>
+\`\`\`
+
+Then run \`grome sync\` to distribute it to connected projects.
+
+**Replying:** open the file, append a new section at the bottom:
+
+\`\`\`markdown
+## <your project> @ <ISO timestamp>
+
+<Your reply.>
+\`\`\`
+
+Then \`grome sync\` again.
+
+**Closing:** when the question is settled, any participant appends a resolution footer and flips status to \`resolved\`:
+
+\`\`\`markdown
+---
+
+**Resolution:** <one-line summary of the outcome>
+**Resolved by:** <project> @ <ISO timestamp>
+\`\`\`
+
+and updates the header's \`**Status:**\` line to \`resolved\`.
+
+**When to start one instead of a handoff:**
+- You have a **question** for another project, not an announcement.
+- The answer is ambiguous, a judgment call, or depends on info only the other side has.
+- You want a short exchange, not a formal briefing.
+
+**When to keep it as a handoff:**
+- You're announcing a completed change.
+- There are specific action items for the receiver.
+- No reply is needed.
+
+Don't spam conversations. One thread per question, resolve or abandon old ones.
+
 ### Sessions / new-session handoffs (this project only)
 
 A **session note** (a.k.a. **new-session handoff**) is an *internal* handoff for the next agent that opens this same workspace — distinct from cross-project handoffs in \`.grome/memory/handoffs/\`. They contain **everything the next agent needs** to pick up cleanly when the current context is about to be lost (compaction, IDE reset, end of a long session). Sessions are NOT synced across projects — use handoffs for that.

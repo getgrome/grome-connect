@@ -170,6 +170,52 @@ function escapeForRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/**
+ * Parse a conversation file's header. Conversations look like:
+ *
+ * ```
+ * # Conversation: <topic>
+ *
+ * **Started by:** <project>
+ * **Status:** open | resolved
+ *
+ * ## <project> @ <timestamp>
+ * ...message body...
+ *
+ * ## <other project> @ <timestamp>
+ * ...
+ * ```
+ *
+ * lastSpeaker is pulled from the final `## <project> @` heading so the
+ * index can show who talked most recently without loading the full file.
+ */
+function parseConversationHeader(content: string): {
+  topic: string;
+  status: string;
+  startedBy: string;
+  lastSpeaker: string | null;
+} {
+  const titleMatch = content.match(/^#\s*(?:Conversation:\s*)?(.+)$/m);
+  const topic = titleMatch ? titleMatch[1].trim() : 'untitled';
+
+  const field = (label: string): string | undefined => {
+    const re = new RegExp(`\\*\\*${label}:\\*\\*\\s*([^\\n]+)`, 'i');
+    const m = content.match(re);
+    return m ? m[1].trim() : undefined;
+  };
+
+  const status = (field('Status') ?? 'open').toLowerCase();
+  const startedBy = field('Started by') ?? field('From') ?? 'unknown';
+
+  // Find the last `## <project> @ <timestamp>` heading.
+  const messageHeadings = [...content.matchAll(/^##\s+(.+?)\s*@\s*.+$/gm)];
+  const lastSpeaker = messageHeadings.length > 0
+    ? messageHeadings[messageHeadings.length - 1][1].trim()
+    : null;
+
+  return { topic, status, startedBy, lastSpeaker };
+}
+
 export class MemoryWriter {
   /**
    * Scan all connected projects and write memory files everywhere.
@@ -272,6 +318,12 @@ export class MemoryWriter {
     // handoffs addressed to them without opening every file.
     MemoryWriter.propagateMarkdownHandoffs(allRoots);
     MemoryWriter.regenerateHandoffIndexes(allRoots);
+
+    // Phase 5: Same treatment for conversations — multi-turn dialogs that
+    // agents in connected projects use to reach consensus without the user
+    // acting as broker. Append-only .md files, propagated mtime-wins.
+    MemoryWriter.propagateConversations(allRoots);
+    MemoryWriter.regenerateConversationIndexes(allRoots);
 
     return {
       projects: scanResults,
@@ -546,6 +598,105 @@ Connected projects: ${connectedNames}
       try {
         fs.writeFileSync(path.join(dir, '_index.md'), body);
       } catch { /* skip */ }
+    }
+  }
+
+  /**
+   * Mtime-wins propagation for `.grome/memory/conversations/*.md`. Same
+   * semantics as propagateMarkdownHandoffs, different directory — conversations
+   * are broadcast to every connected project so anyone can join or eavesdrop.
+   */
+  private static propagateConversations(allRoots: string[]): void {
+    type Entry = { absPath: string; mtimeMs: number };
+    const byName = new Map<string, Entry>();
+
+    for (const root of allRoots) {
+      const dir = path.join(ConnectionManager.getMemoryDir(root), 'conversations');
+      if (!fs.existsSync(dir)) continue;
+      for (const name of fs.readdirSync(dir)) {
+        if (!name.endsWith('.md')) continue;
+        const absPath = path.join(dir, name);
+        let mtimeMs = 0;
+        try { mtimeMs = fs.statSync(absPath).mtimeMs; } catch { continue; }
+        const prev = byName.get(name);
+        if (!prev || mtimeMs > prev.mtimeMs) {
+          byName.set(name, { absPath, mtimeMs });
+        }
+      }
+    }
+
+    if (byName.size === 0) return;
+
+    for (const root of allRoots) {
+      const dir = path.join(ConnectionManager.getMemoryDir(root), 'conversations');
+      ensureDir(dir);
+      for (const [name, entry] of byName) {
+        const target = path.join(dir, name);
+        if (target === entry.absPath) continue;
+        try {
+          const existing = fs.existsSync(target) ? fs.statSync(target).mtimeMs : -1;
+          if (entry.mtimeMs > existing) {
+            fs.copyFileSync(entry.absPath, target);
+          }
+        } catch { /* skip unreadable */ }
+      }
+    }
+  }
+
+  /**
+   * Regenerate `_index.md` in every project's conversations dir. One table,
+   * sorted by last-activity (file mtime). Shows status, participants, and the
+   * most recent message author so agents can decide whether to jump in.
+   */
+  private static regenerateConversationIndexes(allRoots: string[]): void {
+    for (const root of allRoots) {
+      const projectName = ConnectionManager.getProjectName(root);
+      const dir = path.join(ConnectionManager.getMemoryDir(root), 'conversations');
+      if (!fs.existsSync(dir)) continue;
+
+      type Row = { name: string; mtimeMs: number; line: string };
+      const rows: Row[] = [];
+
+      for (const name of fs.readdirSync(dir)) {
+        if (!name.endsWith('.md') || name === '_index.md') continue;
+        const absPath = path.join(dir, name);
+        let content: string;
+        let mtimeMs = 0;
+        try {
+          content = fs.readFileSync(absPath, 'utf-8');
+          mtimeMs = fs.statSync(absPath).mtimeMs;
+        } catch { continue; }
+
+        const parsed = parseConversationHeader(content);
+        rows.push({
+          name,
+          mtimeMs,
+          line: `| [\`${name}\`](./${name}) | ${parsed.topic.replace(/\|/g, '\\|')} | ${parsed.status} | ${parsed.startedBy} | ${parsed.lastSpeaker ?? '—'} |`,
+        });
+      }
+
+      rows.sort((a, b) => b.mtimeMs - a.mtimeMs);
+
+      const body = rows.length > 0
+        ? [
+          `# Conversations (\`${projectName}\`)`,
+          '',
+          '> Auto-generated by `grome sync`. Source of truth is the individual `.md` files —',
+          '> append messages to them to participate. Re-run sync to refresh this index.',
+          '',
+          '| File | Topic | Status | Started by | Last speaker |',
+          '| ---- | ----- | ------ | ---------- | ------------ |',
+          ...rows.map((r) => r.line),
+          '',
+        ].join('\n')
+        : [
+          `# Conversations (\`${projectName}\`)`,
+          '',
+          'No conversations yet.',
+          '',
+        ].join('\n');
+
+      try { fs.writeFileSync(path.join(dir, '_index.md'), body); } catch { /* skip */ }
     }
   }
 
