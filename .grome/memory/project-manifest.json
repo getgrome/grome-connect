@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "generatedAt": "2026-04-10T12:34:33.588Z",
+  "thisProject": "grome",
+  "connections": [
+    {
+      "projectId": "zpqna1n8",
+      "name": "grome",
+      "path": "/Volumes/RLEE-4TB/Desktop-External/grome-all/grome",
+      "linked": "2026-04-10T02:34:30.763Z",
+      "framework": null
+    },
+    {
+      "projectId": "ok83u912",
+      "name": "getgrome",
+      "path": "/Volumes/RLEE-4TB/Desktop-External/grome-all/getgrome",
+      "linked": "2026-04-10T02:34:30.763Z",
+      "framework": "next"
+    }
+  ],
+  "stats": {
+    "routes": 192,
+    "types": 16313,
+    "schemas": 671
+  }
+}

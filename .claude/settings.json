@@ -1,0 +1,71 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'mkdir -p \"$CLAUDE_PROJECT_DIR/.grome\" 2>/dev/null; cat >> \"$CLAUDE_PROJECT_DIR/.grome/hook-events.jsonl\"'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'mkdir -p \"$CLAUDE_PROJECT_DIR/.grome\" 2>/dev/null; cat >> \"$CLAUDE_PROJECT_DIR/.grome/hook-events.jsonl\"'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'mkdir -p \"$CLAUDE_PROJECT_DIR/.grome\" 2>/dev/null; cat >> \"$CLAUDE_PROJECT_DIR/.grome/hook-events.jsonl\"'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'mkdir -p \"$CLAUDE_PROJECT_DIR/.grome\" 2>/dev/null; cat >> \"$CLAUDE_PROJECT_DIR/.grome/hook-events.jsonl\"'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'mkdir -p \"$CLAUDE_PROJECT_DIR/.grome\" 2>/dev/null; cat >> \"$CLAUDE_PROJECT_DIR/.grome/hook-events.jsonl\"'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'mkdir -p \"$CLAUDE_PROJECT_DIR/.grome\" 2>/dev/null; cat >> \"$CLAUDE_PROJECT_DIR/.grome/hook-events.jsonl\"'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "_gromeHooksVersion": 3
+}

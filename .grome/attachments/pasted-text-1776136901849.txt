@@ -1,0 +1,3 @@
+ron@Ronalds-Mac-Studio grome-connect % git config user.email "hello@getgrome.com"
+fatal: not in a git directory
+ron@Ronalds-Mac-Studio grome-connect % 
