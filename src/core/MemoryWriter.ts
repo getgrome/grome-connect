@@ -366,10 +366,23 @@ export class MemoryWriter {
         originalTotals,
       });
 
-      // Phase 3: Update agent config files
-      const updated = AgentConfigInjector.inject(root);
-      if (updated.length > 0) {
-        updatedConfigs.set(name, updated);
+      // Phase 3: Update agent config files. If the project config specifies
+      // `agentTargets`, treat that as the authoritative set (create missing).
+      // Otherwise fall back to "inject into any detected files only."
+      let agentTargets: string[] | undefined;
+      try {
+        const cfg = ConnectionManager.readConfig(root);
+        if (Array.isArray(cfg.agentTargets) && cfg.agentTargets.length > 0) {
+          agentTargets = cfg.agentTargets;
+        }
+      } catch { /* no config, use default */ }
+
+      const { updated, created } = agentTargets
+        ? AgentConfigInjector.inject(root, { targets: agentTargets, create: true })
+        : AgentConfigInjector.inject(root);
+      const touched = [...updated, ...created];
+      if (touched.length > 0) {
+        updatedConfigs.set(name, touched);
       }
     }
 

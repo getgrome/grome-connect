@@ -31,6 +31,23 @@ export interface GromeConfig {
    * normally. Existing files on disk are left untouched. Default `true`.
    */
   enableThreads?: boolean;
+  /**
+   * Override the project name used in thread headers, `_index.md`, memory
+   * files, and injected agent-config blocks. When set, wins over
+   * `package.json.name` and the folder basename. Useful when the repo's
+   * `package.json.name` is an upstream identifier (e.g. `code-oss-dev`) but
+   * the project should identify as something else (e.g. `grome`) across
+   * threads and sync.
+   */
+  projectName?: string;
+  /**
+   * Effective list of agent-instruction files (filenames, not aliases) that
+   * `grome sync` should inject the grome-connect section into. Created on
+   * first sync if missing. When absent, sync falls back to "inject into any
+   * detected files only, create none." Set/edited by `grome connect --agents`
+   * and by the IDE's connect modal.
+   */
+  agentTargets?: string[];
 }
 
 export interface Connection {

@@ -6,15 +6,45 @@ import { detectFramework } from '../extractors/detection.js';
 const START_MARKER = '<!-- grome:start -->';
 const END_MARKER = '<!-- grome:end -->';
 
-// All known agent config files
-const AGENT_CONFIG_FILES = [
-  'CLAUDE.md',                          // Claude Code
-  '.cursorrules',                       // Cursor
-  'AGENTS.md',                          // Generic
-  '.github/copilot-instructions.md',    // GitHub Copilot
-  'CONVENTIONS.md',                     // Team conventions
-  'codex.md',                           // OpenAI Codex
+// All known agent config files. The key is also the short `--agents=<name>` alias.
+export const AGENT_CONFIGS: Array<{ alias: string; file: string; label: string }> = [
+  { alias: 'claude',   file: 'CLAUDE.md',                        label: 'Claude Code' },
+  { alias: 'cursor',   file: '.cursor/rules/grome-connect.mdc',  label: 'Cursor' },
+  { alias: 'cursor-legacy', file: '.cursorrules',                label: 'Cursor (legacy)' },
+  { alias: 'windsurf', file: '.windsurfrules',                   label: 'Windsurf' },
+  { alias: 'cline',    file: '.clinerules',                      label: 'Cline' },
+  { alias: 'agents',   file: 'AGENTS.md',                        label: 'Generic (AGENTS.md)' },
+  { alias: 'copilot',  file: '.github/copilot-instructions.md',  label: 'GitHub Copilot' },
+  { alias: 'aider',    file: 'CONVENTIONS.md',                   label: 'Aider' },
+  { alias: 'codex',    file: 'codex.md',                         label: 'OpenAI Codex' },
+  { alias: 'zed',      file: '.rules',                           label: 'Zed' },
 ];
+
+const AGENT_CONFIG_FILES = AGENT_CONFIGS.map(c => c.file);
+
+export function resolveAgents(aliasesOrFiles: string[]): string[] {
+  const out = new Set<string>();
+  for (const raw of aliasesOrFiles) {
+    const a = raw.trim();
+    if (!a) continue;
+    const match = AGENT_CONFIGS.find(c => c.alias === a || c.file === a);
+    if (match) out.add(match.file);
+  }
+  return [...out];
+}
+
+export interface DetectResult {
+  detected: string[];    // files that already exist
+  available: string[];   // all known files (AGENT_CONFIG_FILES)
+}
+
+export function detectAgentConfigs(projectRoot: string): DetectResult {
+  const detected: string[] = [];
+  for (const filename of AGENT_CONFIG_FILES) {
+    if (fs.existsSync(path.join(projectRoot, filename))) detected.push(filename);
+  }
+  return { detected, available: [...AGENT_CONFIG_FILES] };
+}
 
 /**
  * Build a project-specific injection block with actual connection details.
@@ -196,49 +226,104 @@ ${END_MARKER}`;
 
 export class AgentConfigInjector {
   /**
-   * Inject/update the grome section in all detected agent config files.
-   * Returns list of files that were updated.
+   * Inject/update the grome section in agent config files.
+   *
+   * Default (no opts): inject into any AGENT_CONFIG_FILES that already exist.
+   *   (Legacy behavior — used by `grome sync`.)
+   *
+   * With `targets`: restrict to the given filenames.
+   * With `create: true`: create files in `targets` that don't exist, including
+   *   parent directories (for paths like `.cursor/rules/grome-connect.mdc`).
+   *
+   * Returns `{ updated, created }` — both arrays of filenames.
    */
-  static inject(projectRoot: string): string[] {
+  static inject(
+    projectRoot: string,
+    opts?: { targets?: string[]; create?: boolean }
+  ): { updated: string[]; created: string[] } {
     const updated: string[] = [];
+    const created: string[] = [];
     const injection = buildInjection(projectRoot);
 
-    if (!injection) return updated;
+    if (!injection) return { updated, created };
 
-    for (const filename of AGENT_CONFIG_FILES) {
+    const files = opts?.targets && opts.targets.length > 0
+      ? opts.targets
+      : AGENT_CONFIG_FILES;
+
+    for (const filename of files) {
       const filePath = path.join(projectRoot, filename);
-
-      // Ensure parent directory exists for nested paths like .github/copilot-instructions.md
       const dir = path.dirname(filePath);
+      const exists = fs.existsSync(filePath);
+      const willCreate = !exists && opts?.create === true;
 
-      if (!fs.existsSync(filePath)) {
-        // Only create .github/copilot-instructions.md if .github/ exists
-        if (filename.includes('/')) {
-          if (!fs.existsSync(dir)) continue;
+      if (!exists && !willCreate) {
+        // Legacy default: auto-create copilot file only if .github/ exists.
+        if (!opts?.targets && filename === '.github/copilot-instructions.md' && fs.existsSync(dir)) {
+          // fall through to create
         } else {
-          continue; // Don't create top-level files that don't exist
+          continue;
         }
       }
 
-      let content: string;
+      if (!exists) {
+        try {
+          fs.mkdirSync(dir, { recursive: true });
+        } catch {
+          continue;
+        }
+      }
+
+      let content = '';
       try {
-        content = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '';
+        if (exists) content = fs.readFileSync(filePath, 'utf-8');
       } catch {
         continue;
       }
 
       const newContent = AgentConfigInjector.upsertSection(content, injection);
 
-      if (newContent !== content) {
+      if (newContent !== content || !exists) {
         try {
           fs.writeFileSync(filePath, newContent);
-          updated.push(filename);
-        } catch {
-          // Write failed
-        }
+          if (exists) updated.push(filename);
+          else created.push(filename);
+        } catch { /* write failed */ }
       }
     }
 
+    return { updated, created };
+  }
+
+  /**
+   * Strip the grome-connect section from a specific set of files (leaving
+   * any user-authored content intact). Use this when the IDE removes a file
+   * from `agentTargets` — inject() only touches files in its target list, so
+   * dropped files need an explicit strip to clean up the old block.
+   *
+   * If a file becomes empty after stripping (we created it and it held
+   * nothing else), the file is deleted rather than left as an empty shell.
+   */
+  static removeFrom(projectRoot: string, files: string[]): string[] {
+    const updated: string[] = [];
+    for (const filename of files) {
+      const filePath = path.join(projectRoot, filename);
+      if (!fs.existsSync(filePath)) continue;
+
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const newContent = AgentConfigInjector.removeSection(content);
+
+      if (newContent !== content) {
+        try {
+          if (newContent.trim() === '') {
+            fs.unlinkSync(filePath);
+          } else {
+            fs.writeFileSync(filePath, newContent);
+          }
+          updated.push(filename);
+        } catch { /* write failed */ }
+      }
+    }
     return updated;
   }
 

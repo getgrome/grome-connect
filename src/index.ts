@@ -3,7 +3,14 @@
 
 export { ConnectionManager } from './core/ConnectionManager.js';
 export { MemoryWriter } from './core/MemoryWriter.js';
-export { AgentConfigInjector, buildInjection } from './core/AgentConfigInjector.js';
+export {
+  AgentConfigInjector,
+  buildInjection,
+  detectAgentConfigs,
+  resolveAgents,
+  AGENT_CONFIGS,
+} from './core/AgentConfigInjector.js';
+export type { DetectResult } from './core/AgentConfigInjector.js';
 export { Scanner } from './core/Scanner.js';
 export { detectFramework } from './extractors/detection.js';
 

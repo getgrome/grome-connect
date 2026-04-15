@@ -73,6 +73,14 @@ export class ConnectionManager {
   }
 
   /**
+   * Write config to a project (overwrites). Caller is responsible for merging.
+   */
+  static writeConfig(projectRoot: string, config: GromeConfig): void {
+    const configPath = path.join(projectRoot, GROME_DIR, CONFIG_FILE);
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
+  }
+
+  /**
    * Read connections from a project.
    */
   static readConnections(projectRoot: string): ConnectionsFile {
@@ -152,10 +160,23 @@ export class ConnectionManager {
   }
 
   /**
-   * Get the project name from directory name.
+   * Resolve the project name. Resolution order:
+   *   1. `.grome/config.json.projectName` (string override)
+   *   2. `package.json.name`
+   *   3. folder basename
    */
   static getProjectName(projectRoot: string): string {
-    // Try package.json name first
+    const configPath = path.join(projectRoot, GROME_DIR, CONFIG_FILE);
+    if (fs.existsSync(configPath)) {
+      try {
+        const cfg = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        if (typeof cfg.projectName === 'string' && cfg.projectName.trim()) {
+          return cfg.projectName.trim();
+        }
+      } catch {
+        // fall through
+      }
+    }
     const pkgPath = path.join(projectRoot, 'package.json');
     if (fs.existsSync(pkgPath)) {
       try {

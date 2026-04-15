@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { CLI_VERSION } from './version.js';
 import { initCommand } from './cli/init.js';
 import { linkCommand } from './cli/link.js';
 import { syncCommand } from './cli/sync.js';
@@ -11,7 +12,7 @@ const program = new Command();
 program
   .name('grome')
   .description('CLI for connected workspaces — link projects, share context with AI agents')
-  .version('0.1.1');
+  .version(CLI_VERSION);
 
 program
   .command('init')
@@ -20,9 +21,14 @@ program
 
 program
   .command('link <path>')
+  .alias('connect')
   .description('Connect another project directory (bidirectional)')
   .option('--force', 'Skip large repo warning')
-  .action((targetPath: string, opts: { force?: boolean }) => linkCommand(targetPath, opts));
+  .option('--agents <list>', 'Comma-separated: detect | all | none | <alias,alias> (e.g. claude,cursor)')
+  .option('-y, --yes', 'Accept defaults non-interactively')
+  .action((targetPath: string, opts: { force?: boolean; agents?: string; yes?: boolean }) =>
+    linkCommand(targetPath, opts)
+  );
 
 program
   .command('sync')
