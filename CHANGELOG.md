@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-15
+
+### Fixed
+- Solo-connect / zero-peer projects now correctly write `.grome/grome.md` and the pointer block. `AgentConfigInjector.inject()` and `writeGromeMd()` previously short-circuited on `connections.length === 0`, leaving a freshly-initialized project with neither the spec file nor any agent-file pointer — the IDE's first-time connect flow hit this. Gate is now "project is grome-initialized," not "has at least one peer." Pointer and grome.md render a "none yet" placeholder for the Connected projects line until a peer is linked.
+
 ## [0.3.0] - 2026-04-15
 
 ### Removed

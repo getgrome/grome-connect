@@ -56,9 +56,13 @@ interface ProjectContext {
 }
 
 function readProjectContext(projectRoot: string): ProjectContext | null {
-  const connections = ConnectionManager.readConnections(projectRoot);
-  if (connections.connections.length === 0) return null;
+  // Returns null only if the project isn't grome-initialized at all. A
+  // grome-initialized project with zero peers still gets grome.md + a
+  // pointer — a solo connect is a valid state during first-time setup,
+  // and the protocol doc is useful regardless of peer count.
+  if (!ConnectionManager.isInitialized(projectRoot)) return null;
 
+  const connections = ConnectionManager.readConnections(projectRoot);
   const projectName = ConnectionManager.getProjectName(projectRoot);
 
   let enableThreads = true;
@@ -67,19 +71,21 @@ function readProjectContext(projectRoot: string): ProjectContext | null {
     enableThreads = config.enableThreads !== false;
   } catch { /* default true */ }
 
-  const peerList = connections.connections.map(conn => {
-    let framework = '';
-    try {
-      const fw = detectFramework(conn.path);
-      if (fw) framework = ` (${fw})`;
-    } catch { /* can't detect */ }
-    const name = conn.name || conn.path.split('/').pop();
-    return `- **${name}**${framework} — \`${conn.path}\``;
-  }).join('\n');
+  const peerList = connections.connections.length === 0
+    ? '_(no peers connected yet)_'
+    : connections.connections.map(conn => {
+        let framework = '';
+        try {
+          const fw = detectFramework(conn.path);
+          if (fw) framework = ` (${fw})`;
+        } catch { /* can't detect */ }
+        const name = conn.name || conn.path.split('/').pop();
+        return `- **${name}**${framework} — \`${conn.path}\``;
+      }).join('\n');
 
-  const peerNamesCsv = connections.connections
-    .map(c => c.name || c.path.split('/').pop())
-    .join(', ');
+  const peerNamesCsv = connections.connections.length === 0
+    ? '_(none yet — connect a peer with `grome connect <path>`)_'
+    : connections.connections.map(c => c.name || c.path.split('/').pop()).join(', ');
 
   const peerExample = connections.connections[0]?.name ?? 'other-project';
 
