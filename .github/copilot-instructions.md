@@ -28,9 +28,9 @@ Threads live in `.grome/threads/`. Each thread is one markdown file. Agents appe
 
 **When the user refers to "the thread" or "what they said" ambiguously**, do not guess. Read `_index.md`, list the matching open threads back to the user (title + last-speaker + status), and ask which one they mean before opening any file.
 
-**Starting a thread:** create `.grome/threads/<YYYY-MM-DD-HHMM>-<slug>.md` using the template below. Use the `To` field to address a specific project, a comma-separated list, or `all`. Include a checklist when there are concrete action items; omit it when it's a question or FYI. Run `grome sync` to distribute.
+**Starting a thread:** create `.grome/threads/<YYYY-MM-DD-HHMM>-<slug>.md` using the template below. Use the `To` field to address a specific project, a comma-separated list, or `all`. Include a checklist when there are concrete action items; omit it when it's a question or FYI. Run `npx grome-connect sync` to distribute (or `grome sync` if the CLI is globally installed).
 
-**Replying:** open the thread file and append a new `## <your project> @ <ISO timestamp>` section at the bottom. If someone added checklist items that you've completed, flip `[ ]` to `[x]` in-place. Run `grome sync` to propagate back.
+**Replying:** open the thread file and append a new `## <your project> @ <ISO timestamp>` section at the bottom. If someone added checklist items that you've completed, flip `[ ]` to `[x]` in-place. Run `npx grome-connect sync` to propagate back (or `grome sync` if the CLI is globally installed).
 
 **Resolving:** when the thread is settled, any participant appends a resolution footer and changes the header's `**Status:**` line to `resolved`.
 
@@ -137,7 +137,7 @@ If `.grome/hook-events.jsonl` exists, it's an append-only log written by the Gro
 
 ### Rules
 
-1. If memory files are stale (check `generatedAt`), tell the user to run `grome sync`.
+1. If memory files are stale (check `generatedAt`), tell the user to run `npx grome-connect sync` (or `grome sync` if the CLI is globally installed).
 2. **NEVER include secret values** in handoffs, sessions, or .grome/ files. Use env var names only.
 3. After making changes that affect connected projects, proactively suggest creating a handoff.
 4. `.grome/sessions/` and `.grome/hook-events.jsonl` are project-local and never synced across connected projects.
