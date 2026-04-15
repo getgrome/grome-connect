@@ -1,7 +1,18 @@
-import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const require = createRequire(import.meta.url);
-const pkg = require('../package.json') as { version: string };
+// Resolve __dirname in both CJS (native) and ESM (via import.meta.url).
+// tsup's CJS shim stubs import.meta to `{}`, so relying on import.meta.url
+// alone breaks `require('grome-connect')` at load time.
+declare const __dirname: string | undefined;
+const here =
+  typeof __dirname !== 'undefined'
+    ? __dirname
+    : dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(
+  readFileSync(join(here, '..', 'package.json'), 'utf8'),
+) as { version: string };
 
 /**
  * The running CLI version, read from package.json at runtime. Stamped into
