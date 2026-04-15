@@ -193,30 +193,17 @@ export async function linkCommand(
 
     // Auto-sync
     console.log(`Syncing...\n`);
-    const result = await MemoryWriter.sync(
-      sourceRoot,
-      (name) => console.log(`Scanning ${color.bold(name)}...`),
-      (name, extraction, framework) => {
-        const frameworkLabel = framework ? ` (${framework})` : '';
-        if (extraction.routes.length > 0)
-          console.log(`  ${symbols.success} ${extraction.routes.length} routes${frameworkLabel}`);
-        if (extraction.types.length > 0)
-          console.log(`  ${symbols.success} ${extraction.types.length} types (TypeScript)`);
-        if (extraction.schemas.length > 0)
-          console.log(`  ${symbols.success} ${extraction.schemas.length} schemas`);
-        if (extraction.routes.length === 0 && extraction.types.length === 0 && extraction.schemas.length === 0)
-          console.log(`  ${color.dim('  No extractable items found')}`);
-      }
-    );
+    const result = await MemoryWriter.sync(sourceRoot);
 
-    console.log(`\nWriting memory to ${result.projects.length} projects...`);
     for (const project of result.projects) {
-      console.log(`  ${symbols.success} ${project.name}/.grome/memory/ (5 files)`);
+      const langs = project.languages.length > 0 ? ` [${project.languages.join(', ')}]` : '';
+      const fw = project.framework ? ` (${project.framework})` : '';
+      console.log(`  ${symbols.success} ${color.bold(project.name)}${fw}${langs}`);
     }
 
     for (const [name, files] of result.updatedConfigs) {
       for (const file of files) {
-        console.log(`Updated ${file} in ${name}`);
+        console.log(`    Updated ${file} in ${name}`);
       }
     }
 
@@ -244,9 +231,7 @@ export async function linkCommand(
       }
     }
 
-    console.log(
-      `\n${symbols.success} ${color.green('Synced')} ${result.totalRoutes} routes, ${result.totalTypes} types, ${result.totalSchemas} schemas\n`
-    );
+    console.log(`\n${symbols.success} ${color.green('Connected.')} Threads enabled; agent files + grome.md refreshed.\n`);
   } catch (err) {
     console.error(`\n  ${symbols.error} ${color.red('Link failed:')} ${(err as Error).message}\n`);
     process.exit(1);

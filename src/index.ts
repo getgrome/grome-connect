@@ -6,6 +6,8 @@ export { MemoryWriter } from './core/MemoryWriter.js';
 export {
   AgentConfigInjector,
   buildInjection,
+  buildGromeMd,
+  writeGromeMd,
   detectAgentConfigs,
   resolveAgents,
   AGENT_CONFIGS,

@@ -75,11 +75,9 @@ export async function watchCommand(): Promise<void> {
 async function doSync(projectRoot: string): Promise<void> {
   try {
     const start = Date.now();
-    const result = await MemoryWriter.sync(projectRoot);
+    await MemoryWriter.sync(projectRoot);
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-    console.log(
-      `  ${symbols.success} ${color.green('Synced')} ${result.totalRoutes} routes, ${result.totalTypes} types, ${result.totalSchemas} schemas ${color.dim(`(${elapsed}s)`)}`
-    );
+    console.log(`  ${symbols.success} ${color.green('Synced')} ${color.dim(`(${elapsed}s)`)}`);
   } catch (err) {
     console.error(`  ${symbols.error} ${color.red('Sync failed:')} ${(err as Error).message}`);
   }

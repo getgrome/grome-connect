@@ -1,86 +1,24 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type {
-  GromeConfig,
-  ExtractionResult,
-  ExtractedRoute,
-  ExtractedType,
-  ExtractedSchema,
   Connection,
-  RouteMapFile,
-  SharedTypesFile,
-  ApiSchemasFile,
   ProjectManifest,
   Framework,
 } from '../types.js';
 import { ConnectionManager } from './ConnectionManager.js';
-import { Scanner } from './Scanner.js';
-import { PermissionChecker } from './PermissionChecker.js';
 import { AgentConfigInjector } from './AgentConfigInjector.js';
-import { extractRoutes } from '../extractors/routes.js';
-import { extractTypes } from '../extractors/types.js';
-import { extractSchemas } from '../extractors/schemas.js';
-import { detectFramework } from '../extractors/detection.js';
+import { detectFramework, detectLanguages } from '../extractors/detection.js';
 import { atomicWrite, ensureDir } from '../utils.js';
 import { CLI_VERSION, compareVersions } from '../version.js';
-import micromatch from 'micromatch';
 
-interface ProjectScanResult {
-  name: string;
-  root: string;
-  framework: Framework;
-  extraction: ExtractionResult;
-  originalCounts: { routes: number; types: number; schemas: number };
-}
-
-const DEFAULT_MAX_ENTRIES_PER_KIND = 100;
-
-/**
- * Default "public API surface" globs for shared-types extraction.
- * Covers the common conventions for exposing types meant to be consumed
- * across a project boundary. Implementation files (utils, components,
- * hooks, handlers, etc.) are deliberately excluded so shared-types.json
- * stays focused on what connected projects actually need to know.
- */
-const DEFAULT_SHARED_TYPES_GLOBS = [
-  '**/types.ts',
-  '**/types.tsx',
-  '**/types/**/*.ts',
-  '**/types/**/*.tsx',
-  '**/schema.ts',
-  '**/schemas/**/*.ts',
-  '**/models.ts',
-  '**/models/**/*.ts',
-  '**/contracts/**/*.ts',
-  '**/contracts/**/*.tsx',
-  '**/shared/**/*.ts',
-  '**/shared/**/*.tsx',
-  '**/api-types.ts',
-  '**/api/types.ts',
-  '**/dto.ts',
-  '**/dtos/**/*.ts',
-  // Root barrel indexes — `src/index.ts`, `index.ts`, `src/lib/index.ts`, etc.
-  'index.ts',
-  'src/index.ts',
-  'src/lib/index.ts',
-  'lib/index.ts',
-];
-
-const TEST_FILE_PATTERNS = [
-  '**/*.test.ts',
-  '**/*.test.tsx',
-  '**/*.spec.ts',
-  '**/*.spec.tsx',
-  '**/__tests__/**',
-  '**/test/**',
-  '**/tests/**',
-  '**/__mocks__/**',
-];
-
-const INTERNAL_NAME_PATTERNS = [
-  /^_/,           // _Foo, _internal
-  /^Internal/,
-  /^Private/,
+// Legacy memory files dropped in 0.3.0. `sync` unlinks these on sight so
+// agents stop being pointed at ghosts. Kept here (not in the injected
+// guidance) so the cleanup is purely mechanical.
+const LEGACY_MEMORY_FILES = [
+  'route-map.json',
+  'shared-types.json',
+  'api-schemas.json',
+  'README.md',
 ];
 
 /**
@@ -98,22 +36,8 @@ function threadsEnabled(projectRoot: string): boolean {
 }
 
 /**
- * Parse the header of a thread file. Threads look like:
- *
- * ```
- * # Thread: <subject>
- *
- * **From:** <project>
- * **To:** <project> | <project, project> | all
- * **Started:** <ISO timestamp>
- * **Status:** open | resolved
- *
- * ## <project> @ <timestamp>
- * ...message...
- * ```
- *
- * Everything is optional — missing fields fall back to defaults so an
- * index can always be rendered.
+ * Parse the header of a thread file for the index. Missing fields fall
+ * back to defaults so an index can always be rendered.
  */
 function parseThreadHeader(content: string): {
   subject: string;
@@ -149,68 +73,6 @@ function parseThreadHeader(content: string): {
   return { subject, from, to, status, lastSpeaker, startedAt };
 }
 
-/**
- * Count checklist items in a thread. Supports both `- [ ]` / `- [x]`
- * (spec-compliant) and `* [ ]` / `* [x]` (alternative). The index shows
- * progress as `done/total`, or `✓` when all done, or `—` when there are
- * no checklist items at all.
- */
-/**
- * Fast-glob stat-only pass across a project's scannable files, returning
- * the latest mtime. Used to cheaply decide whether extraction needs to
- * rerun. No file contents are read.
- */
-async function computeSourceMaxMtime(root: string, config: GromeConfig): Promise<number> {
-  const fg = (await import('fast-glob')).default;
-  const checker = new (await import('./PermissionChecker.js')).PermissionChecker(config);
-  const entries = await fg('**/*', {
-    cwd: root,
-    dot: true,
-    ignore: checker.getDenyPatterns(),
-    onlyFiles: true,
-    followSymbolicLinks: false,
-    stats: true,
-  });
-  let max = 0;
-  for (const e of entries) {
-    // Only consider files the scanner would actually read.
-    if (!/\.(ts|js|tsx|jsx|prisma)$/.test(e.path)) continue;
-    const mtime = e.stats?.mtimeMs ?? 0;
-    if (mtime > max) max = mtime;
-  }
-  return max;
-}
-
-/**
- * Per-project sync index lives at `.grome/.sync-index.json`. Missing or
- * unreadable → treat as "everything dirty" (forces a full extraction).
- */
-interface SyncIndex {
-  lastExtractionMtime?: number;
-  cliVersion?: string;
-}
-
-function readSyncIndex(root: string): SyncIndex {
-  try {
-    const p = path.join(ConnectionManager.getGromeDir(root), '.sync-index.json');
-    if (!fs.existsSync(p)) return {};
-    return JSON.parse(fs.readFileSync(p, 'utf-8'));
-  } catch {
-    return {};
-  }
-}
-
-function writeSyncIndex(root: string, data: SyncIndex): void {
-  // Use tmp + rename so concurrent syncs can't produce a torn file
-  // that would confuse the next run's dirty check or version guard.
-  try {
-    const p = path.join(ConnectionManager.getGromeDir(root), '.sync-index.json');
-    const tmp = p + '.tmp';
-    fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
-    fs.renameSync(tmp, p);
-  } catch { /* best-effort */ }
-}
-
 function countChecklist(content: string): { done: number; total: number } {
   let done = 0;
   let total = 0;
@@ -223,33 +85,33 @@ function countChecklist(content: string): { done: number; total: number } {
   return { done, total };
 }
 
+export interface SyncResult {
+  projects: Array<{ name: string; root: string; framework: Framework; languages: string[] }>;
+  updatedConfigs: Map<string, string[]>;
+  /** Files deleted by the one-shot legacy cleanup, per project. */
+  legacyCleanup: Map<string, string[]>;
+}
+
 export class MemoryWriter {
   /**
-   * Scan all connected projects and write memory files everywhere.
-   * Returns scan results for CLI output.
+   * Regenerate memory across all connected projects:
+   * - write `project-manifest.json` (the only remaining memory file)
+   * - write `.grome/grome.md` (protocol spec, via AgentConfigInjector)
+   * - inject pointer blocks into each project's agent config files
+   * - propagate threads and regenerate `_index.md` / `_index.json`
+   * - unlink legacy snapshot files (`route-map.json`, `shared-types.json`,
+   *   `api-schemas.json`, memory `README.md`) if they exist
+   *
+   * As of 0.3.0 there is no extraction phase. Snapshots were removed in
+   * favor of threads + live grep against connected source trees.
    */
-  static async sync(
-    projectRoot: string,
-    onProjectStart?: (name: string) => void,
-    onProjectResult?: (name: string, result: ExtractionResult, framework: Framework) => void,
-    options?: { force?: boolean }
-  ): Promise<{
-    projects: ProjectScanResult[];
-    totalRoutes: number;
-    totalTypes: number;
-    totalSchemas: number;
-    updatedConfigs: Map<string, string[]>;
-    extractionSkipped: boolean;
-  }> {
+  static async sync(projectRoot: string): Promise<SyncResult> {
     const resolvedRoot = path.resolve(projectRoot);
     const allRoots = ConnectionManager.getAllProjectRoots(resolvedRoot);
-    const force = options?.force === true;
 
-    // Version-skew guard: if any connected project's sync index was
-    // written by a *newer* CLI than the one running now, refuse to
-    // proceed. An older CLI silently drops fields it doesn't recognize,
-    // which would corrupt files the newer CLI had written. Throwing is
-    // safer than partial writes — operator can update and retry.
+    // Version-skew guard: if any connected project was last synced by a
+    // newer CLI, bail. An older CLI silently drops fields it doesn't
+    // recognize, which corrupts files the newer CLI had written.
     for (const root of allRoots) {
       const idx = readSyncIndex(root);
       if (idx.cliVersion && compareVersions(idx.cliVersion, CLI_VERSION) > 0) {
@@ -263,347 +125,92 @@ export class MemoryWriter {
       }
     }
 
-    // Dirty check: has any scannable source file changed since the last
-    // extraction? A stat-only pass (no file reads) — far cheaper than the
-    // extraction itself, so safe to run every sync. Extraction is an
-    // all-or-nothing pipeline (routes/types/schemas share source files
-    // and get merged across projects), so dirty is computed globally.
-    let currentMaxMtime = 0;
-    for (const root of allRoots) {
-      try {
-        const config = ConnectionManager.readConfig(root);
-        const mtime = await computeSourceMaxMtime(root, config);
-        if (mtime > currentMaxMtime) currentMaxMtime = mtime;
-      } catch { /* skip */ }
-    }
-    const savedMaxMtime = Math.min(
-      ...allRoots.map((r) => readSyncIndex(r).lastExtractionMtime ?? 0)
-    );
-    const extractionDirty = force || currentMaxMtime > savedMaxMtime || savedMaxMtime === 0;
-
-    // Phase 1: Scan all projects (only if extraction is dirty)
-    const scanResults: ProjectScanResult[] = [];
-    const allRoutes: ExtractedRoute[] = [];
-    const allTypes: ExtractedType[] = [];
-    const allSchemas: ExtractedSchema[] = [];
-
-    if (!extractionDirty) {
-      // Threads still propagate — that's independent and always cheap.
-      MemoryWriter.propagateThreads(allRoots);
-      MemoryWriter.regenerateThreadIndexes(allRoots);
-      return {
-        projects: [],
-        totalRoutes: 0,
-        totalTypes: 0,
-        totalSchemas: 0,
-        updatedConfigs: new Map(),
-        extractionSkipped: true,
-      };
-    }
-
-    for (const root of allRoots) {
-      const name = ConnectionManager.getProjectName(root);
-      onProjectStart?.(name);
-
-      const config = ConnectionManager.readConfig(root);
-      const framework = detectFramework(root);
-      const raw = await MemoryWriter.scanProject(root, config, framework, name);
-
-      const cap = config.maxEntriesPerKind ?? DEFAULT_MAX_ENTRIES_PER_KIND;
-      const originalCounts = {
-        routes: raw.routes.length,
-        types: raw.types.length,
-        schemas: raw.schemas.length,
-      };
-      const extraction: ExtractionResult = {
-        framework: raw.framework,
-        routes: raw.routes.slice(0, cap),
-        types: raw.types.slice(0, cap),
-        schemas: raw.schemas.slice(0, cap),
-      };
-
-      allRoutes.push(...extraction.routes);
-      allTypes.push(...extraction.types);
-      allSchemas.push(...extraction.schemas);
-
-      scanResults.push({ name, root, framework, extraction, originalCounts });
-      onProjectResult?.(name, extraction, framework);
-    }
-
-    const originalTotals = scanResults.reduce(
-      (acc, r) => ({
-        routes: acc.routes + r.originalCounts.routes,
-        types: acc.types + r.originalCounts.types,
-        schemas: acc.schemas + r.originalCounts.schemas,
-      }),
-      { routes: 0, types: 0, schemas: 0 }
-    );
-    const truncated = {
-      routes: originalTotals.routes > allRoutes.length,
-      types: originalTotals.types > allTypes.length,
-      schemas: originalTotals.schemas > allSchemas.length,
-    };
-
-    // Phase 2: Write memory to every project
     const now = new Date().toISOString();
     const updatedConfigs = new Map<string, string[]>();
+    const legacyCleanup = new Map<string, string[]>();
+    const projects: SyncResult['projects'] = [];
 
     for (const root of allRoots) {
       const name = ConnectionManager.getProjectName(root);
+      const framework = detectFramework(root);
+      const languages = detectLanguages(root);
+      projects.push({ name, root, framework, languages });
+
+      // Manifest connections: each connected project's framework + languages.
       const connections = ConnectionManager.readConnections(root);
-      const connectionsWithFramework = connections.connections.map((conn) => {
-        const scanResult = scanResults.find((s) => s.root === conn.path);
-        return { ...conn, framework: scanResult?.framework ?? null };
-      });
+      const manifestConnections = connections.connections.map((conn) => ({
+        ...conn,
+        framework: detectFramework(conn.path),
+        languages: detectLanguages(conn.path),
+      }));
 
-      await MemoryWriter.writeMemoryFiles(root, name, {
-        routes: allRoutes,
-        types: allTypes,
-        schemas: allSchemas,
-        connections: connectionsWithFramework,
-        now,
-        truncated,
-        originalTotals,
-      });
+      const memoryDir = ConnectionManager.getMemoryDir(root);
+      ensureDir(memoryDir);
 
-      // Phase 3: Update agent config files. If the project config specifies
-      // `agentTargets`, treat that as the authoritative set (create missing).
-      // Otherwise fall back to "inject into any detected files only."
+      const manifest: ProjectManifest = {
+        version: 2,
+        generatedAt: now,
+        cliVersion: CLI_VERSION,
+        thisProject: name,
+        connections: manifestConnections,
+      };
+      await atomicWrite(
+        path.join(memoryDir, 'project-manifest.json'),
+        JSON.stringify(manifest, null, 2)
+      );
+
+      // One-shot cleanup of legacy snapshot files. Best-effort; never fail sync.
+      const removed: string[] = [];
+      for (const f of LEGACY_MEMORY_FILES) {
+        const p = path.join(memoryDir, f);
+        try {
+          if (fs.existsSync(p)) {
+            fs.unlinkSync(p);
+            removed.push(f);
+          }
+        } catch { /* skip */ }
+      }
+      if (removed.length > 0) legacyCleanup.set(name, removed);
+
+      // Agent-config injection (also refreshes `.grome/grome.md`).
       let agentTargets: string[] | undefined;
       try {
         const cfg = ConnectionManager.readConfig(root);
         if (Array.isArray(cfg.agentTargets) && cfg.agentTargets.length > 0) {
           agentTargets = cfg.agentTargets;
         }
-      } catch { /* no config, use default */ }
+      } catch { /* default */ }
 
       const { updated, created } = agentTargets
         ? AgentConfigInjector.inject(root, { targets: agentTargets, create: true })
         : AgentConfigInjector.inject(root);
       const touched = [...updated, ...created];
-      if (touched.length > 0) {
-        updatedConfigs.set(name, touched);
-      }
+      if (touched.length > 0) updatedConfigs.set(name, touched);
     }
 
-    // Phase 4: Propagate threads (the single cross-project message primitive)
-    // across all connected projects and regenerate per-project _index.md so
-    // agents can scan for what's addressed to them without opening every file.
+    // Threads propagate across all projects; regenerate per-project indexes.
     MemoryWriter.propagateThreads(allRoots);
     MemoryWriter.regenerateThreadIndexes(allRoots);
 
-    // Stamp the sync index in every project so the next sync can skip
-    // extraction if nothing in source trees has changed. Also record the
-    // CLI version that produced the current state — used by version-skew
-    // guards on future runs.
+    // Stamp the sync index so future version-skew guards work.
     for (const root of allRoots) {
-      writeSyncIndex(root, {
-        lastExtractionMtime: currentMaxMtime,
-        cliVersion: CLI_VERSION,
-      });
+      writeSyncIndex(root, { cliVersion: CLI_VERSION });
     }
 
-    return {
-      projects: scanResults,
-      totalRoutes: allRoutes.length,
-      totalTypes: allTypes.length,
-      totalSchemas: allSchemas.length,
-      updatedConfigs,
-      extractionSkipped: false,
-    };
-  }
-
-  /**
-   * Scan a single project and extract routes, types, and schemas.
-   */
-  private static async scanProject(
-    root: string,
-    config: GromeConfig,
-    framework: Framework,
-    projectName: string
-  ): Promise<ExtractionResult> {
-    const scanner = new Scanner(root, config);
-    const routes: ExtractedRoute[] = [];
-    const types: ExtractedType[] = [];
-    const schemas: ExtractedSchema[] = [];
-
-    const sharedTypesGlobs = config.extractors.sharedTypesGlobs ?? DEFAULT_SHARED_TYPES_GLOBS;
-
-    // Get scannable files
-    const files = await scanner.scan();
-
-    for (const relPath of files) {
-      const absPath = path.join(root, relPath);
-
-      // Only read text files we can extract from
-      if (!relPath.match(/\.(ts|js|tsx|jsx|prisma)$/)) continue;
-
-      // Safety cap: skip huge source files. Real hand-written TS/JS is
-      // ~never over 1 MB; a file this big is typically generated/bundled
-      // output that slipped past the deny list. Reading it would waste
-      // memory on content the extractors can't use anyway.
-      try {
-        const size = fs.statSync(path.join(root, relPath)).size;
-        if (size > 1_000_000) continue;
-      } catch { continue; }
-
-      // Routes and schemas still scan all files; shared-types extraction
-      // is restricted to files that match a public-surface glob (and skips
-      // test files), so shared-types.json stays focused on cross-project API
-      // shape rather than every exported interface in the codebase.
-      const isTestFile = micromatch.isMatch(relPath, TEST_FILE_PATTERNS);
-      const isSharedTypeFile = !isTestFile &&
-        micromatch.isMatch(relPath, sharedTypesGlobs);
-
-      let content: string;
-      try {
-        content = fs.readFileSync(absPath, 'utf-8');
-      } catch {
-        continue; // Skip unreadable files
-      }
-
-      if (config.extractors.routes) {
-        routes.push(...extractRoutes(content, relPath, projectName, framework));
-      }
-
-      if (config.extractors.types && isSharedTypeFile && relPath.match(/\.(ts|tsx)$/)) {
-        const fileTypes = extractTypes(content, relPath, projectName).filter(
-          (t) => !INTERNAL_NAME_PATTERNS.some((re) => re.test(t.name))
-        );
-        types.push(...fileTypes);
-      }
-
-      if (config.extractors.schemas) {
-        schemas.push(...extractSchemas(content, relPath, projectName));
-      }
-    }
-
-    return { routes, types, schemas, framework };
-  }
-
-  /**
-   * Write all memory files to a project's .grome/memory/ directory.
-   */
-  private static async writeMemoryFiles(
-    projectRoot: string,
-    projectName: string,
-    data: {
-      routes: ExtractedRoute[];
-      types: ExtractedType[];
-      schemas: ExtractedSchema[];
-      connections: Array<Connection & { framework: Framework }>;
-      now: string;
-      truncated: { routes: boolean; types: boolean; schemas: boolean };
-      originalTotals: { routes: number; types: number; schemas: number };
-    }
-  ): Promise<void> {
-    const memoryDir = ConnectionManager.getMemoryDir(projectRoot);
-    ensureDir(memoryDir);
-
-    // route-map.json
-    const routeMap: RouteMapFile = {
-      version: 1,
-      generatedAt: data.now,
-      routes: data.routes,
-      ...(data.truncated.routes && {
-        truncated: true,
-        originalCount: data.originalTotals.routes,
-      }),
-    };
-    await atomicWrite(
-      path.join(memoryDir, 'route-map.json'),
-      JSON.stringify(routeMap, null, 2)
-    );
-
-    // shared-types.json
-    const sharedTypes: SharedTypesFile = {
-      version: 1,
-      generatedAt: data.now,
-      types: data.types,
-      ...(data.truncated.types && {
-        truncated: true,
-        originalCount: data.originalTotals.types,
-      }),
-    };
-    await atomicWrite(
-      path.join(memoryDir, 'shared-types.json'),
-      JSON.stringify(sharedTypes, null, 2)
-    );
-
-    // api-schemas.json
-    const apiSchemas: ApiSchemasFile = {
-      version: 1,
-      generatedAt: data.now,
-      schemas: data.schemas,
-      ...(data.truncated.schemas && {
-        truncated: true,
-        originalCount: data.originalTotals.schemas,
-      }),
-    };
-    await atomicWrite(
-      path.join(memoryDir, 'api-schemas.json'),
-      JSON.stringify(apiSchemas, null, 2)
-    );
-
-    // project-manifest.json
-    const manifest: ProjectManifest = {
-      version: 1,
-      generatedAt: data.now,
-      cliVersion: CLI_VERSION,
-      thisProject: projectName,
-      connections: data.connections,
-      stats: {
-        routes: data.routes.length,
-        types: data.types.length,
-        schemas: data.schemas.length,
-      },
-    };
-    await atomicWrite(
-      path.join(memoryDir, 'project-manifest.json'),
-      JSON.stringify(manifest, null, 2)
-    );
-
-    // README.md
-    const connectedNames = data.connections.map((c) => c.name).join(', ') || 'none';
-    const readme = `# Grome Shared Memory
-
-Cross-project context generated by Grome Connect.
-Do not edit — overwritten on each sync.
-
-## Files
-- route-map.json — API routes from connected projects
-- shared-types.json — TypeScript types and interfaces
-- api-schemas.json — Validation schemas (Zod, Prisma)
-- project-manifest.json — Connection metadata
-
-## Usage
-Read these files to understand the API surface of connected projects.
-Use route-map.json for endpoint paths and methods.
-Use shared-types.json for response/request type shapes.
-
-Last synced: ${data.now}
-Connected projects: ${connectedNames}
-`;
-    await atomicWrite(path.join(memoryDir, 'README.md'), readme);
+    return { projects, updatedConfigs, legacyCleanup };
   }
 
   /**
    * Propagate thread files (`.grome/threads/*.md`) across every
-   * connected project. Threads are the single cross-project message
-   * primitive — announcements, questions, multi-turn discussions, all
-   * collapse here. Propagation is mtime-wins: the newest copy of a given
-   * filename overwrites older copies in every other project.
+   * connected project. Mtime-wins: newest copy of a given filename
+   * overwrites older copies in every other project.
    */
   private static propagateThreads(allRoots: string[]): void {
     type Entry = { absPath: string; mtimeMs: number };
     const byName = new Map<string, Entry>();
 
-    // Collect only from projects that have threads enabled — a disabled
-    // project's locally-authored threads don't propagate outward.
-    // Reject mtimes strictly in the future: `touch -d 2099-01-01` on a
-    // thread file would otherwise let a peer permanently own the content.
-    // A small positive skew tolerance (5 min) absorbs clock drift between
-    // machines without opening the spoofing door.
+    // Reject mtimes strictly in the future (5 min skew tolerance) so a
+    // `touch -d 2099` can't let a peer permanently own a thread.
     const SKEW_TOLERANCE_MS = 5 * 60 * 1000;
     const futureCutoff = Date.now() + SKEW_TOLERANCE_MS;
     for (const root of allRoots) {
@@ -615,7 +222,7 @@ Connected projects: ${connectedNames}
         const absPath = path.join(dir, name);
         let mtimeMs = 0;
         try { mtimeMs = fs.statSync(absPath).mtimeMs; } catch { continue; }
-        if (mtimeMs > futureCutoff) continue; // reject future-stamped files
+        if (mtimeMs > futureCutoff) continue;
         const prev = byName.get(name);
         if (!prev || mtimeMs > prev.mtimeMs) byName.set(name, { absPath, mtimeMs });
       }
@@ -623,8 +230,6 @@ Connected projects: ${connectedNames}
 
     if (byName.size === 0) return;
 
-    // Write only to projects that have threads enabled — threads don't
-    // land in a disabled project's dir even if peers have them.
     for (const root of allRoots) {
       if (!threadsEnabled(root)) continue;
       const dir = path.join(ConnectionManager.getGromeDir(root), 'threads');
@@ -641,13 +246,8 @@ Connected projects: ${connectedNames}
   }
 
   /**
-   * Regenerate `_index.md` in every project's threads dir. One table per
-   * project, filtered to threads addressed to that project (or `all`),
-   * sorted by last-activity. Columns: thread, from, to, status, progress
-   * (checklist completion), last speaker.
-   *
-   * Source of truth is always the individual `.md` files. This index is
-   * pure projection and safe to regenerate every sync.
+   * Regenerate `_index.md` and `_index.json` in every project's threads
+   * dir. Source of truth is always the individual `.md` files.
    */
   private static regenerateThreadIndexes(allRoots: string[]): void {
     for (const root of allRoots) {
@@ -700,7 +300,6 @@ Connected projects: ${connectedNames}
 
       entries.sort((a, b) => b.mtimeMs - a.mtimeMs);
 
-      // _index.md — human-readable table
       const rowLines = entries.map((e) => {
         const toLabel = e.to.join(', ');
         const progress = e.progress === null
@@ -732,9 +331,6 @@ Connected projects: ${connectedNames}
 
       try { fs.writeFileSync(path.join(dir, '_index.md'), mdBody); } catch { /* skip */ }
 
-      // _index.json — machine-readable sidecar. Same data, stable schema.
-      // Consumed by the Grome IDE and any other programmatic client so no
-      // one has to parse the markdown table.
       const jsonBody = {
         version: 1 as const,
         cliVersion: CLI_VERSION,
@@ -758,12 +354,37 @@ Connected projects: ${connectedNames}
     const memoryDir = ConnectionManager.getMemoryDir(projectRoot);
     if (!fs.existsSync(memoryDir)) return;
 
-    const files = ['route-map.json', 'shared-types.json', 'api-schemas.json', 'project-manifest.json', 'README.md'];
+    const files = ['project-manifest.json', ...LEGACY_MEMORY_FILES];
     for (const file of files) {
       const filePath = path.join(memoryDir, file);
       if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+        try { fs.unlinkSync(filePath); } catch { /* skip */ }
       }
     }
   }
+}
+
+// ── Sync index ────────────────────────────────────────────────────
+
+interface SyncIndex {
+  cliVersion?: string;
+}
+
+function readSyncIndex(root: string): SyncIndex {
+  try {
+    const p = path.join(ConnectionManager.getGromeDir(root), '.sync-index.json');
+    if (!fs.existsSync(p)) return {};
+    return JSON.parse(fs.readFileSync(p, 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+function writeSyncIndex(root: string, data: SyncIndex): void {
+  try {
+    const p = path.join(ConnectionManager.getGromeDir(root), '.sync-index.json');
+    const tmp = p + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+    fs.renameSync(tmp, p);
+  } catch { /* best-effort */ }
 }

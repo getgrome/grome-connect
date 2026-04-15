@@ -129,12 +129,7 @@ export interface ProjectManifest {
   generatedAt: string;
   cliVersion?: string;
   thisProject: string;
-  connections: Array<Connection & { framework: string | null }>;
-  stats: {
-    routes: number;
-    types: number;
-    schemas: number;
-  };
+  connections: Array<Connection & { framework: string | null; languages?: string[] }>;
 }
 
 // ── Handoffs ──

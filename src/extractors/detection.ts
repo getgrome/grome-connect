@@ -38,3 +38,47 @@ export function detectFramework(projectRoot: string): Framework {
 
   return null;
 }
+
+const LANGUAGE_MARKERS: Array<{ file: string; language: string }> = [
+  { file: 'package.json', language: 'typescript' },
+  { file: 'tsconfig.json', language: 'typescript' },
+  { file: 'go.mod', language: 'go' },
+  { file: 'Cargo.toml', language: 'rust' },
+  { file: 'pyproject.toml', language: 'python' },
+  { file: 'requirements.txt', language: 'python' },
+  { file: 'Gemfile', language: 'ruby' },
+  { file: 'composer.json', language: 'php' },
+  { file: 'pom.xml', language: 'java' },
+  { file: 'build.gradle', language: 'java' },
+  { file: 'build.gradle.kts', language: 'kotlin' },
+  { file: 'mix.exs', language: 'elixir' },
+];
+
+/**
+ * Lightweight language detection from manifest files. Returns a
+ * de-duplicated list so a TS-over-Node repo surfaces as `['typescript']`
+ * rather than `['typescript', 'typescript']`. Used by `project-manifest.json`
+ * to give agents a "what should I grep" hint without a deep file scan.
+ */
+export function detectLanguages(projectRoot: string): string[] {
+  const found = new Set<string>();
+  for (const { file, language } of LANGUAGE_MARKERS) {
+    if (fs.existsSync(path.join(projectRoot, file))) found.add(language);
+  }
+
+  // If TypeScript wasn't indicated by tsconfig but package.json exists,
+  // distinguish ts-vs-plain-js. Cheap heuristic: look for any .ts file
+  // marker in package.json (typescript dep or "types" field).
+  if (found.has('typescript')) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(path.join(projectRoot, 'package.json'), 'utf-8'));
+      const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
+      if (!deps.typescript && !pkg.types && !fs.existsSync(path.join(projectRoot, 'tsconfig.json'))) {
+        found.delete('typescript');
+        found.add('javascript');
+      }
+    } catch { /* keep default */ }
+  }
+
+  return [...found];
+}
