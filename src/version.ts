@@ -1,25 +1,14 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-// Resolve __dirname in both CJS (native) and ESM (via import.meta.url).
-// tsup's CJS shim stubs import.meta to `{}`, so relying on import.meta.url
-// alone breaks `require('grome-connect')` at load time.
-declare const __dirname: string | undefined;
-const here =
-  typeof __dirname !== 'undefined'
-    ? __dirname
-    : dirname(fileURLToPath(import.meta.url));
-const pkg = JSON.parse(
-  readFileSync(join(here, '..', 'package.json'), 'utf8'),
-) as { version: string };
+// Inlined at build time by tsup via esbuild `define`. No runtime
+// package.json read, so the bundle is self-contained and works even
+// when dropped into a directory with no sibling package.json.
+declare const __CLI_VERSION__: string;
 
 /**
- * The running CLI version, read from package.json at runtime. Stamped into
- * every file grome-connect writes so consumers (and future versions of
- * grome-connect itself) can detect which version produced a given artifact.
+ * The running CLI version, stamped in at build time. Written into every
+ * file grome-connect produces so consumers (and future versions of the
+ * CLI itself) can detect which version produced a given artifact.
  */
-export const CLI_VERSION: string = pkg.version;
+export const CLI_VERSION: string = __CLI_VERSION__;
 
 /**
  * Compare two semver-ish strings. Returns positive if a > b, negative if

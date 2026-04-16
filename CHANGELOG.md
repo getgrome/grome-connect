@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-04-16
+
+### Fixed
+- **Bundled `dist/index.cjs` and `dist/cli.cjs` are now fully self-contained.** `tsup` was leaving `fast-glob`, `micromatch`, and `commander` as external `require()` calls, so consumers that embed `dist/*.cjs` without a sibling `node_modules` (e.g. the Grome IDE's packaged Electron app) hit `Cannot find module 'fast-glob'` on load. Added `noExternal: ['commander', 'fast-glob', 'micromatch']` to the tsup config. Future runtime deps should be added to that list unless they ship native addons.
+- **Removed runtime `readFileSync` on `package.json` for the version string.** `src/version.ts` used to read `../package.json` at load time, which broke when `dist/*.cjs` was dropped into a directory without that sibling file. Version is now stamped in at build time via tsup's `define: { __CLI_VERSION__ }`. The bundle no longer needs a sibling `package.json` to load.
+
+### Added
+- `npm run test:bundle` — smoke-tests that the built `dist/index.cjs` and `dist/cli.cjs` load from a bare temp directory (no `node_modules`, no `package.json`). Runs as part of `prepublishOnly` so a broken bundle can't ship. Caught the 0.3.2-era regression instantly when rerun.
+
 ## [0.3.2] - 2026-04-16
 
 ### Fixed
