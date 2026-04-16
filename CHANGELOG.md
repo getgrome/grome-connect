@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-04-16
+
+### Fixed
+- `npx grome-connect <command>` now actually works. Previously the package only shipped a bin named `grome`, and since `npx` resolves by **bin name** (not package name), every instance of `npx grome-connect sync` in the generated `.grome/grome.md` failed with `sh: grome: command not found`. Added `grome-connect` as a bin entry alongside `grome`; the short form remains available for globally-installed users.
+
+### Changed
+- `.grome/grome.md` now leads with `npx grome-connect <command>` as the canonical invocation and calls out the `grome <command>` shortcut once up top. Removed the "(or `grome sync` if the CLI is globally installed)" trailing note from every `sync` mention — the repetition was confusing agents into trying both forms.
+
 ## [0.3.1] - 2026-04-15
 
 ### Fixed
