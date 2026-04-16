@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-04-16
+
+### Fixed
+- **ESM bundle regressed in 0.3.3.** Applying `noExternal` to all runtime deps inlined `commander` — a CJS-authored module with internal `require()` calls — into the ESM output, which crashed at load with `Error: Dynamic require of "events" is not supported`. `bin/cli.js` (which imports `dist/cli.js`) was broken for anyone upgrading to 0.3.3. Split the tsup config per-format: **CJS bundle stays self-contained** (the Grome IDE embed case), **ESM bundle keeps deps external** and resolves them from `node_modules` at runtime. Both formats verified in the `test:bundle` smoke test.
+- `test:bundle` now additionally runs `dist/cli.js --version` (ESM) alongside the bare-dir CJS check so this exact regression can't land again.
+
 ## [0.3.3] - 2026-04-16
 
 ### Fixed
