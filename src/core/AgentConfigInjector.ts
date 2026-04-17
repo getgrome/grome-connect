@@ -258,6 +258,48 @@ Session files live in \`.grome/sessions/\`. Two kinds:
 
 Sections may be omitted when they genuinely don't apply, but the first five (Headline, What Shipped, Files Changed, Known/Open, What to Do First) should almost always be present.
 
+### Structured data in threads and sessions
+
+When a thread turn or session carries genuinely **tabular data** — a task board, a version matrix, an infra map, a benchmark comparison, a migration checklist — use this shared convention so the Grome IDE (v1.2.1+) and any downstream tooling can parse it consistently. Prose-style threads and short sessions don't need this; only reach for it when the content already wants to be a table.
+
+Three pieces:
+
+1. **YAML frontmatter with \`kind:\`** (the discriminator). Kebab-case, free-form — pick something descriptive. The IDE renders a small pill above the document when it sees this, signaling "this is structured":
+
+   \`\`\`yaml
+   ---
+   kind: retrieval-version-snapshot
+   generated: <ISO timestamp>
+   ---
+   \`\`\`
+
+2. **\`## section:<id>\` headers** (in sessions) or **\`### section:<id>\`** inside a thread turn — because \`##\` is already reserved for turn headers (\`## <project> @ <ts>\`) in threads. Stable, machine-addressable ids in snake_case: \`section:versions\`, \`section:tasks\`, \`section:infra\`. Matched case-insensitively. Section ids are **optional** — the \`kind:\` discriminator alone is enough to mark the document as parseable; section ids give finer-grained extraction when you want it.
+
+3. **Typed markdown tables.** Every row is a record, every column a field. No schema — tables are self-describing by their header row. When the IDE needs to track per-row state (e.g. a task changing \`not_started\` → \`in_progress\`), make the **first column a stable \`id\`** (\`T1\`, \`v31\`, etc.) that persists across edits. Reference tables (inventory-style, no mutation) can skip the \`id\` column.
+
+Minimal example of a session:
+
+\`\`\`markdown
+---
+kind: task-board
+generated: 2026-04-17T16:35:00Z
+---
+
+# <title>
+
+## section:tasks
+
+| id | task | priority | status | blocked_by |
+|----|------|----------|--------|------------|
+| T1 | Wire RETRIEVAL_V31 into analyze/route.ts | critical | in_progress | — |
+| T2 | Smoke-test v31 end-to-end | critical | not_started | T1 |
+\`\`\`
+
+Rules:
+- **Apply only when it fits.** A two-sentence session doesn't need frontmatter. Don't contort prose into tables just to use the convention.
+- **Thread turn headers own \`##\`.** Inside a thread turn body, always use \`###\` for section headings so the turn-detection parser isn't confused.
+- **Don't use \`section:\` in a heading that isn't actually a structured section** — that pollutes extraction.
+
 ### Hook events (IDE-only)
 
 If \`.grome/hook-events.jsonl\` exists, it's an append-only log written by the Grome IDE's Claude Code hooks. It's **project-local**, never synced, and only relevant for debugging the hook pipeline itself. Do not read it unless the user explicitly asks (e.g. "why didn't the hook fire", "look at the hook events").
