@@ -52,7 +52,9 @@ program
 
 program
   .command('watch')
-  .description('Watch connected projects and auto-sync on file changes')
-  .action(watchCommand);
+  .description('Watch .grome/threads/ + .grome/sessions/ and emit events when peer agents post')
+  .option('--poll', 'Use polling instead of fs.watch (network / external drives)')
+  .option('--force', 'Take over watcher even if another pid is live')
+  .action((opts: { poll?: boolean; force?: boolean }) => watchCommand(opts));
 
 program.parse();

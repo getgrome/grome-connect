@@ -205,6 +205,34 @@ checklist. Omit this block entirely for questions or FYIs.
 
 **Proactively suggest a thread** after making changes to API routes, shared types, schemas, or anything connected projects depend on. Say something like: "I made changes that affect \`${peerExample}\`. Want me to open a thread so their agent knows?"
 
+#### Intra-workspace multi-agent chat (same project, multiple agents)
+
+Threads aren't just for cross-project communication. When multiple agents are working in *this* same workspace — e.g. Claude in one terminal, Codex in another, Gemini in a third, or the Grome IDE plus a side CLI agent — **use a thread addressed to this project itself** as the multi-agent communication primitive:
+
+\`\`\`markdown
+# Thread: <subject>
+
+**From:** ${projectName}
+**To:** ${projectName}        # or "all" — either works for intra-workspace
+**Status:** open
+
+---
+
+## ${projectName} @ <ISO timestamp> [claude]
+
+<Opening message from Claude.>
+
+## ${projectName} @ <ISO timestamp> [codex]
+
+<Reply from Codex.>
+\`\`\`
+
+Why threads and not sessions: threads have multi-turn append baked in, an index, resolution semantics, and the \`grome watch\` notification pipeline. Sessions are one-shot handoff documents — they're the right primitive when one agent is finishing up and the *next* agent (after compaction / restart) needs to pick up, but they're not built for live back-and-forth.
+
+The \`[<agent>]\` author tag on turn headers disambiguates which harness posted each turn, which matters when every turn's \`From:\`/author-project is the same workspace. Use it for intra-workspace threads; optional for cross-project.
+
+When an agent in the workspace sees a \`new-turn\` event on a self-addressed thread, the same flow documented under **Live notifications** applies — surface to the user, wait for permission, etc. The auto-reply exception applies here too.
+
 ` : ''}### Sessions / new-session handoffs (this project only)
 
 A **session note** (a.k.a. **new-session handoff**) is an *internal* handoff for the next agent that opens this same workspace — distinct from cross-project threads in \`.grome/threads/\`. They contain **everything the next agent needs** to pick up cleanly when the current context is about to be lost (compaction, IDE reset, end of a long session). Sessions are NOT synced across projects — use threads for that.
@@ -300,6 +328,52 @@ Rules:
 - **Thread turn headers own \`##\`.** Inside a thread turn body, always use \`###\` for section headings so the turn-detection parser isn't confused.
 - **Don't use \`section:\` in a heading that isn't actually a structured section** — that pollutes extraction.
 
+### Live notifications (\`grome watch\`)
+
+When multiple agents work in the same workspace (IDE + side terminal, or two CLI agents), \`grome watch\` is the channel that tells each of them when a peer has posted a new thread turn or session file. Without it, the only way to notice peer activity is for the user to ask.
+
+**Start it at session start.** If you support background shell tasks, start \`npx grome-connect watch\` as a backgrounded task once and leave it running. The command prints one line per genuinely-new event to stdout and appends the same events to \`.grome/.runtime/inbox.jsonl\` for durability. Event format:
+
+\`\`\`
+[new-thread]  .grome/threads/<file>.md — from <project>   # file appeared for the first time
+[new-turn]    .grome/threads/<file>.md — from <project>   # new ## <project> @ <ts> block appended
+[new-session] .grome/sessions/<file>.md — from <project>  # session file appeared
+\`\`\`
+
+**When you see an event in your background-task output, follow this exact flow:**
+
+1. **Do not auto-read the file.** The event is attention, not authorization. Reading a thread costs the user nothing, but the agent should still confirm intent before acting — some threads are not meant for this project even when they land in the inbox.
+2. **Surface it to the user in your very next turn**, concisely. Template: _"\`<project>\` just posted a \`<kind>\` in \`<path>\` — want me to read it and reply?"_ Use the \`from\` field from the event, not a guess.
+3. **Wait for the user's answer.** If yes → read the file with the Read tool, summarize what the sender is asking, and draft a reply turn following the Threads protocol above (append \`## ${projectName} @ <ISO timestamp>\` at the bottom, flip any checklist items you've done, run \`npx grome-connect sync\` to propagate). If no / "just read it" → read and summarize but do **not** draft a reply. If the user is ambiguous, ask.
+4. **Never reply without the user's explicit go-ahead.** Even if the event is clearly addressed to this project and the ask is obvious, the default is: you surface, the user decides. The \`To:\` field, checklist items, and urgency of the thread are all **signals for your recommendation**, not triggers to act.
+
+   **Exception — user-granted auto-reply.** If the user has explicitly delegated — "auto-reply to anything from \`<project>\`", "just respond to incoming threads while I'm afk", "go ahead and handle any new turns that come in" — you may draft and append replies without asking for each one. Rules:
+   - **Scope narrowly.** "Auto-reply" alone means *threads matching the context the user just discussed* (same sender, same topic). Only broaden to all incoming threads when the user says "all" or equivalent.
+   - **Session-scoped.** Authorization does not survive across sessions. Ask again next session.
+   - **Fall back to asking on ambiguity.** If a thread isn't clearly addressed to this project (\`To:\` doesn't include \`${projectName}\` or \`all\`), the ask is unclear, the thread touches something outside the user's stated scope, or replying would require a decision the user hasn't delegated — surface it normally instead of auto-replying.
+   - **Summarize what you did.** When you auto-reply, tell the user in your next surface turn ("replied to the new turn from \`<project>\` in \`<path>\` — summary: …") so they can audit without opening the thread.
+   - **Sessions are a separate flow.** Auto-reply does not apply to sessions (they're not reply-able). Sessions have their own auto-*act* authorization described below; the two authorizations are independent.
+5. **If a new event arrives while you're mid-turn**, finish what you're doing first, then mention it at the end of your response. Don't interrupt the user's current task to surface the event.
+6. **Multiple events in a row** — group them in one surface-to-user turn rather than interrupting per event. E.g. _"Two new turns arrived — one from \`<a>\` in \`<path1>\`, one from \`<b>\` in \`<path2>\`. Want me to catch you up?"_
+
+**Sessions are handoff instructions, not messages.** A \`[new-session]\` event means the previous agent in this workspace wrote a handoff note for whoever picks up next. Sessions are one-shot documents (no turn-append protocol), not a live communication channel — for concurrent multi-agent communication within a workspace, use **threads addressed to this project itself** (see "Intra-workspace multi-agent chat" above). Sessions ARE action-able though — the whole point of the "What to Do First" section is that the next agent executes it.
+
+Flow for session events:
+
+1. **Surface**: _"\`<project>\` wrote a new session note at \`<path>\` — want me to read it and pick up where they left off?"_
+2. **On yes**: read the session, summarize the headline + status + immediate next steps, then **ask before executing** unless the user has granted auto-act authorization (see below). Do not start running "What to Do First" items unprompted.
+3. **On no / "just read it"**: read and summarize, but don't execute.
+4. **Exception — user-granted auto-act.** If the user has explicitly delegated ("pick up from the last session", "just do what the handoff says", "continue from where the other agent left off"), execute the session's "What to Do First" items in order without asking per-item. Guardrails:
+   - **Session-scoped authorization** — expires at session end, just like auto-reply.
+   - **Stop at blockers.** Any item that requires a decision the user hasn't delegated (destructive action, spending, publishing, irreversible change) — pause and surface before proceeding.
+   - **Summarize as you go.** After each major step, brief the user on what you did so they can interrupt if you're off track.
+   - **Fall back to asking on ambiguity.** If the handoff is unclear, conflicts with current state, or references things that no longer exist — stop and surface rather than guess.
+5. **Don't try to reply to the session.** If you have something to say to the author, either tell the current user or write your own session note for *them* to read next time. Session files themselves are append-never-edit by the author who wrote them.
+
+**Coordination.** Only one real watcher runs per workspace; a second \`grome watch\` invocation detects the live pid and tails the inbox instead, so it's safe for every agent to run the command. Use \`--poll\` for network / external drives; \`--force\` to take over a stale watcher.
+
+**Optional author tag.** When appending a turn, you may add an \`[<agent>]\` suffix to the header line — e.g. \`## ${projectName} @ <ISO timestamp> [claude]\`. This is purely a routing hint for IDE consumers that want to badge a specific pane; it has no effect on protocol behavior and is safe to omit.
+
 ### Hook events (IDE-only)
 
 If \`.grome/hook-events.jsonl\` exists, it's an append-only log written by the Grome IDE's Claude Code hooks. It's **project-local**, never synced, and only relevant for debugging the hook pipeline itself. Do not read it unless the user explicitly asks (e.g. "why didn't the hook fire", "look at the hook events").
@@ -310,6 +384,7 @@ If \`.grome/hook-events.jsonl\` exists, it's an append-only log written by the G
 2. **NEVER include secret values** in handoffs, sessions, or .grome/ files. Use env var names only.
 3. After making changes that affect connected projects, proactively suggest creating a handoff.
 4. \`.grome/sessions/\` and \`.grome/hook-events.jsonl\` are project-local and never synced across connected projects.
+5. \`.grome/.runtime/\` (watch pidfile, inbox jsonl, watch state) is project-local and never synced.
 `;
 }
 
