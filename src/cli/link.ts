@@ -10,6 +10,7 @@ import {
   detectAgentConfigs,
   resolveAgents,
 } from '../core/AgentConfigInjector.js';
+import { McpRegistrar } from '../core/McpRegistrar.js';
 import { color, symbols } from '../utils.js';
 import type { GromeConfig } from '../types.js';
 
@@ -110,7 +111,7 @@ async function resolveAgentTargets(
 
 export async function linkCommand(
   targetPath: string,
-  options?: { force?: boolean; agents?: string; yes?: boolean }
+  options?: { force?: boolean; agents?: string; yes?: boolean; registerMcp?: boolean }
 ): Promise<void> {
   const sourceRoot = path.resolve(process.cwd());
   const targetRoot = path.resolve(targetPath);
@@ -228,6 +229,18 @@ export async function linkCommand(
           cfg.agentTargets = effectiveTargets;
           ConnectionManager.writeConfig(root, cfg);
         } catch { /* config missing — skip */ }
+      }
+    }
+
+    if (options?.registerMcp) {
+      for (const [root, name] of [[sourceRoot, sourceName], [targetRoot, targetName]] as const) {
+        const res = await McpRegistrar.register(root);
+        const icon = res.action === 'skipped-user-managed' ? symbols.warning : symbols.success;
+        const msg =
+          res.action === 'skipped-user-managed'
+            ? `MCP entry already user-managed in ${color.bold(name)} (.mcp.json) — left alone`
+            : `Registered MCP server in ${color.bold(name)} (.mcp.json ${res.action})`;
+        console.log(`  ${icon} ${msg}`);
       }
     }
 

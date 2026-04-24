@@ -3,9 +3,13 @@ import * as path from 'node:path';
 import { ConnectionManager } from '../core/ConnectionManager.js';
 import { MemoryWriter } from '../core/MemoryWriter.js';
 import { AgentConfigInjector } from '../core/AgentConfigInjector.js';
+import { McpRegistrar } from '../core/McpRegistrar.js';
 import { color, symbols } from '../utils.js';
 
-export async function unlinkCommand(targetPath: string): Promise<void> {
+export async function unlinkCommand(
+  targetPath: string,
+  options: { unregisterMcp?: boolean } = {}
+): Promise<void> {
   const sourceRoot = path.resolve(process.cwd());
   const targetRoot = path.resolve(targetPath);
 
@@ -69,6 +73,18 @@ export async function unlinkCommand(targetPath: string): Promise<void> {
           for (const file of removedTarget) {
             console.log(`  ${symbols.success} Removed Grome section from ${file} in ${targetName}`);
           }
+        }
+      }
+    }
+
+    if (options.unregisterMcp) {
+      for (const [root, name] of [[sourceRoot, sourceName], [targetRoot, targetName]] as const) {
+        if (!fs.existsSync(root)) continue;
+        const res = await McpRegistrar.unregister(root);
+        if (res.action === 'removed') {
+          console.log(`  ${symbols.success} Removed MCP registration from ${color.bold(name)} (.mcp.json)`);
+        } else if (res.action === 'skipped-user-managed') {
+          console.log(`  ${symbols.warning} MCP entry in ${color.bold(name)} is user-managed — left alone`);
         }
       }
     }
