@@ -19,7 +19,7 @@ describe('SkillTemplate.provision', () => {
     const results = SkillTemplate.provision(tmp);
     expect(results).toHaveLength(1);
     expect(results[0].action).toBe('created');
-    const body = fs.readFileSync(path.join(tmp, '.claude/skills/grome-workspace.md'), 'utf8');
+    const body = fs.readFileSync(path.join(tmp, '.claude/skills/grome-workspace/SKILL.md'), 'utf8');
     expect(body).toContain('grome-managed');
     expect(body).toContain('grome__read_chat_log');
   });
@@ -31,12 +31,32 @@ describe('SkillTemplate.provision', () => {
   });
 
   it('refuses to overwrite a user-authored file (no sentinel)', () => {
-    const target = path.join(tmp, '.claude/skills/grome-workspace.md');
+    const target = path.join(tmp, '.claude/skills/grome-workspace/SKILL.md');
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, 'user wrote this, no sentinel');
     const results = SkillTemplate.provision(tmp);
     expect(results[0].action).toBe('skipped-user-managed');
     expect(fs.readFileSync(target, 'utf8')).toBe('user wrote this, no sentinel');
+  });
+});
+
+describe('SkillTemplate.provision — 0.6.0 → 0.6.1 migration', () => {
+  it('removes the legacy flat-file skill if managed', () => {
+    const legacy = path.join(tmp, '.claude/skills/grome-workspace.md');
+    fs.mkdirSync(path.dirname(legacy), { recursive: true });
+    fs.writeFileSync(legacy, '<!-- grome-managed: do not edit; managed by grome-connect sync -->\nold\n');
+    SkillTemplate.provision(tmp);
+    expect(fs.existsSync(legacy)).toBe(false);
+    expect(fs.existsSync(path.join(tmp, '.claude/skills/grome-workspace/SKILL.md'))).toBe(true);
+  });
+
+  it('leaves a user-authored flat file alone', () => {
+    const legacy = path.join(tmp, '.claude/skills/grome-workspace.md');
+    fs.mkdirSync(path.dirname(legacy), { recursive: true });
+    fs.writeFileSync(legacy, 'user wrote this');
+    SkillTemplate.provision(tmp);
+    expect(fs.existsSync(legacy)).toBe(true);
+    expect(fs.readFileSync(legacy, 'utf8')).toBe('user wrote this');
   });
 });
 
@@ -48,7 +68,7 @@ describe('SkillTemplate.unprovision', () => {
   });
 
   it('leaves user-managed files alone', () => {
-    const target = path.join(tmp, '.claude/skills/grome-workspace.md');
+    const target = path.join(tmp, '.claude/skills/grome-workspace/SKILL.md');
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, 'mine');
     const results = SkillTemplate.unprovision(tmp);
