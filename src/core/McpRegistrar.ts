@@ -76,7 +76,7 @@ function readMcpJson(filePath: string): McpConfig {
 function defaultEntry(opts: RegisterOptions = {}): McpServerEntry {
   return {
     command: opts.command ?? 'npx',
-    args: opts.args ?? ['-y', 'grome-connect', 'mcp'],
+    args: opts.args ?? ['-y', 'grome-connect@latest', 'mcp'],
     [SENTINEL_KEY]: true,
   };
 }

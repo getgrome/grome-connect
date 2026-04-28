@@ -11,6 +11,7 @@ import { markInboxReadTool } from './tools/mark_inbox_read.js';
 import { syncTool } from './tools/sync.js';
 import { registerSessionTool } from './tools/register_session.js';
 import { chatResponseTool } from './tools/chat_response.js';
+import { readChatLogTool } from './tools/read_chat_log.js';
 import type { Tool, ToolContext } from './types.js';
 
 const PROTOCOL_VERSION = '2024-11-05';
@@ -36,6 +37,7 @@ const TOOLS: Tool[] = [
   listSessionsTool,
   readSessionTool,
   listUnreadInboxTool,
+  readChatLogTool,
   // write-side
   replyThreadTool,
   newThreadTool,

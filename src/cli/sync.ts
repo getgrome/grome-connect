@@ -4,7 +4,13 @@ import { ConnectionManager } from '../core/ConnectionManager.js';
 import { MemoryWriter } from '../core/MemoryWriter.js';
 import { color, symbols } from '../utils.js';
 
-export async function syncCommand(_options?: { force?: boolean }): Promise<void> {
+export interface SyncCommandOptions {
+  force?: boolean;
+  noMcp?: boolean;
+  noSkill?: boolean;
+}
+
+export async function syncCommand(options: SyncCommandOptions = {}): Promise<void> {
   const projectRoot = path.resolve(process.cwd());
 
   if (!ConnectionManager.isInitialized(projectRoot)) {
@@ -26,7 +32,10 @@ export async function syncCommand(_options?: { force?: boolean }): Promise<void>
 
   try {
     console.log();
-    const result = await MemoryWriter.sync(projectRoot);
+    const result = await MemoryWriter.sync(projectRoot, {
+      noMcp: options.noMcp,
+      noSkill: options.noSkill,
+    });
 
     for (const project of result.projects) {
       const langs = project.languages.length > 0 ? ` [${project.languages.join(', ')}]` : '';
@@ -44,7 +53,24 @@ export async function syncCommand(_options?: { force?: boolean }): Promise<void>
       console.log(`  ${color.dim(`Cleaned up legacy files in ${name}:`)} ${files.join(', ')}`);
     }
 
-    console.log(`\n${symbols.success} ${color.green('Synced.')} Threads propagated; agent files + grome.md refreshed.\n`);
+    for (const [name, entries] of result.provisioning) {
+      const interesting = entries.filter((e) => e.action !== 'unchanged');
+      if (interesting.length === 0) continue;
+      for (const e of interesting) {
+        const rel = e.path.startsWith(projectRoot)
+          ? e.path.slice(projectRoot.length + 1)
+          : e.path;
+        const verb =
+          e.action === 'created' ? color.green('created') :
+          e.action === 'updated' ? color.cyan('updated') :
+          e.action === 'skipped-user-managed' ? color.dim('skipped (user-managed)') :
+          e.action === 'skipped-opt-out' ? color.dim('skipped (opt-out)') :
+          e.action;
+        console.log(`    ${verb} ${rel} ${color.dim(`(${e.kind}, ${name})`)}`);
+      }
+    }
+
+    console.log(`\n${symbols.success} ${color.green('Synced.')} Threads propagated; agent files + grome.md refreshed; .mcp.json + skill provisioned.\n`);
   } catch (err) {
     console.error(`\n  ${symbols.error} ${color.red('Sync failed:')} ${(err as Error).message}\n`);
     process.exit(1);
