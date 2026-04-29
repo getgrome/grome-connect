@@ -48,23 +48,6 @@ export interface GromeConfig {
    * and by the IDE's connect modal.
    */
   agentTargets?: string[];
-  /**
-   * When `false`, `grome sync` skips writing/refreshing `.mcp.json` for
-   * this project. The repo-root `.mcp.json` file makes the grome-connect
-   * MCP tools (`grome__*`) available to agents launched in this
-   * workspace; opting out means agents won't see those tools unless the
-   * user maintains `.mcp.json` themselves. Default `true`. Set via
-   * `grome sync --no-mcp` (persisted) or by hand.
-   */
-  provisionMcp?: boolean;
-  /**
-   * When `false`, `grome sync` skips writing/refreshing
-   * `.claude/skills/grome-workspace.md`. The skill primes Claude Code on
-   * Grome-workspace behavior at session start. Opting out means agents
-   * must be primed manually each session. Default `true`. Set via
-   * `grome sync --no-skill` (persisted) or by hand.
-   */
-  provisionSkill?: boolean;
 }
 
 export interface Connection {

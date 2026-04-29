@@ -7,8 +7,6 @@ import type {
 } from '../types.js';
 import { ConnectionManager } from './ConnectionManager.js';
 import { AgentConfigInjector } from './AgentConfigInjector.js';
-import { McpRegistrar } from './McpRegistrar.js';
-import { SkillTemplate } from './SkillTemplate.js';
 import { detectFramework, detectLanguages } from '../extractors/detection.js';
 import { atomicWrite, ensureDir } from '../utils.js';
 import { CLI_VERSION, compareVersions } from '../version.js';
@@ -92,21 +90,6 @@ export interface SyncResult {
   updatedConfigs: Map<string, string[]>;
   /** Files deleted by the one-shot legacy cleanup, per project. */
   legacyCleanup: Map<string, string[]>;
-  /** Provisioning actions per project (MCP + skill). */
-  provisioning: Map<string, ProvisionLogEntry[]>;
-}
-
-export interface ProvisionLogEntry {
-  kind: 'mcp' | 'skill';
-  path: string;
-  action: 'created' | 'updated' | 'unchanged' | 'skipped-user-managed' | 'skipped-opt-out';
-}
-
-export interface SyncOptions {
-  /** Override per-project `provisionMcp` config flag. */
-  noMcp?: boolean;
-  /** Override per-project `provisionSkill` config flag. */
-  noSkill?: boolean;
 }
 
 export class MemoryWriter {
@@ -122,7 +105,7 @@ export class MemoryWriter {
    * As of 0.3.0 there is no extraction phase. Snapshots were removed in
    * favor of threads + live grep against connected source trees.
    */
-  static async sync(projectRoot: string, opts: SyncOptions = {}): Promise<SyncResult> {
+  static async sync(projectRoot: string): Promise<SyncResult> {
     const resolvedRoot = path.resolve(projectRoot);
     const allRoots = ConnectionManager.getAllProjectRoots(resolvedRoot);
 
@@ -145,7 +128,6 @@ export class MemoryWriter {
     const now = new Date().toISOString();
     const updatedConfigs = new Map<string, string[]>();
     const legacyCleanup = new Map<string, string[]>();
-    const provisioning = new Map<string, ProvisionLogEntry[]>();
     const projects: SyncResult['projects'] = [];
 
     for (const root of allRoots) {
@@ -204,59 +186,6 @@ export class MemoryWriter {
         : AgentConfigInjector.inject(root);
       const touched = [...updated, ...created];
       if (touched.length > 0) updatedConfigs.set(name, touched);
-
-      // Persist --no-mcp / --no-skill into per-project config so the
-      // opt-out sticks across sync invocations. Only persist when the
-      // flag was set (don't flip an explicit `false` back to `true`).
-      let cfg: import('../types.js').GromeConfig | null = null;
-      try { cfg = ConnectionManager.readConfig(root); } catch { /* not initialized */ }
-      let cfgChanged = false;
-      if (cfg && opts.noMcp && cfg.provisionMcp !== false) {
-        cfg.provisionMcp = false;
-        cfgChanged = true;
-      }
-      if (cfg && opts.noSkill && cfg.provisionSkill !== false) {
-        cfg.provisionSkill = false;
-        cfgChanged = true;
-      }
-      if (cfg && cfgChanged) ConnectionManager.writeConfig(root, cfg);
-
-      const log: ProvisionLogEntry[] = [];
-      const mcpEnabled = cfg ? cfg.provisionMcp !== false : true;
-      const skillEnabled = cfg ? cfg.provisionSkill !== false : true;
-
-      if (!mcpEnabled) {
-        log.push({ kind: 'mcp', path: McpRegistrar.path(root), action: 'skipped-opt-out' });
-      } else {
-        try {
-          const r = await McpRegistrar.register(root);
-          log.push({ kind: 'mcp', path: r.path, action: r.action });
-        } catch {
-          // McpRegistrar throws on unparseable .mcp.json — surface as a
-          // skipped-user-managed entry rather than failing the whole sync.
-          log.push({
-            kind: 'mcp',
-            path: McpRegistrar.path(root),
-            action: 'skipped-user-managed',
-          });
-        }
-      }
-
-      if (!skillEnabled) {
-        for (const slot of SkillTemplate.slots) {
-          log.push({
-            kind: 'skill',
-            path: path.join(root, slot.relPath),
-            action: 'skipped-opt-out',
-          });
-        }
-      } else {
-        for (const r of SkillTemplate.provision(root)) {
-          log.push({ kind: 'skill', path: r.path, action: r.action });
-        }
-      }
-
-      if (log.length > 0) provisioning.set(name, log);
     }
 
     // Threads propagate across all projects; regenerate per-project indexes.
@@ -268,7 +197,7 @@ export class MemoryWriter {
       writeSyncIndex(root, { cliVersion: CLI_VERSION });
     }
 
-    return { projects, updatedConfigs, legacyCleanup, provisioning };
+    return { projects, updatedConfigs, legacyCleanup };
   }
 
   /**

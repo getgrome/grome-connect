@@ -38,12 +38,8 @@ program
 
 program
   .command('sync')
-  .description('Propagate threads, refresh memory, and provision .mcp.json + .claude/skills/grome-workspace.md in connected projects')
-  .option('--no-mcp', 'Skip .mcp.json provisioning for each connected project (persisted in config)')
-  .option('--no-skill', 'Skip .claude/skills/grome-workspace.md provisioning for each connected project (persisted in config)')
-  .action((opts: { mcp?: boolean; skill?: boolean }) =>
-    syncCommand({ noMcp: opts.mcp === false, noSkill: opts.skill === false })
-  );
+  .description('Propagate threads and (if source changed) re-extract shared memory')
+  .action(syncCommand);
 
 program
   .command('sync-full')
