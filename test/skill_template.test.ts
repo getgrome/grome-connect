@@ -72,26 +72,7 @@ describe('SkillTemplate.unprovision', () => {
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, 'mine');
     const results = SkillTemplate.unprovision(tmp);
-    const ours = results.find((r) => r.path === target);
-    expect(ours?.action).toBe('skipped-user-managed');
+    expect(results[0].action).toBe('skipped-user-managed');
     expect(fs.existsSync(target)).toBe(true);
-  });
-
-  it('removes both the new and legacy paths when both are managed (0.7.0 cleanup)', () => {
-    const sentinel = '<!-- grome-managed: do not edit; managed by grome-connect sync -->';
-    const newPath = path.join(tmp, '.claude/skills/grome-workspace/SKILL.md');
-    const legacyPath = path.join(tmp, '.claude/skills/grome-workspace.md');
-    fs.mkdirSync(path.dirname(newPath), { recursive: true });
-    fs.writeFileSync(newPath, sentinel + '\nnew\n');
-    fs.writeFileSync(legacyPath, sentinel + '\nlegacy\n');
-
-    const results = SkillTemplate.unprovision(tmp);
-    const removed = results.filter((r) => r.action === 'removed').map((r) => r.path);
-    expect(removed).toContain(newPath);
-    expect(removed).toContain(legacyPath);
-    expect(fs.existsSync(newPath)).toBe(false);
-    expect(fs.existsSync(legacyPath)).toBe(false);
-    // Empty parent directory should be cleaned up too
-    expect(fs.existsSync(path.dirname(newPath))).toBe(false);
   });
 });

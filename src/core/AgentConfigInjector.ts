@@ -112,19 +112,6 @@ This project (**${ctx.projectName}**) is part of a connected Grome workspace.
 
 Connected projects: ${ctx.peerNamesCsv}. See \`.grome/memory/project-manifest.json\` for paths.
 
-### Chat panel routing
-
-When \`$GROME_TERMINAL_INSTANCE_ID\` is set, you are reachable through the Grome IDE chat panel as well as the terminal. On every reply:
-
-1. Call \`grome__read_chat_log\` first to load prior turns. Your stdin only carries the latest prompt; without this you have no memory of earlier turns.
-2. Generate your full response.
-3. Write that response to stdout as you normally would.
-4. Also call \`grome__chat_response({ body })\` with the **same text** so the chat panel renders it. Both surfaces show identical content — do not split, abbreviate, or summarize for one and not the other.
-
-When \`$GROME_TERMINAL_INSTANCE_ID\` is unset, the chat panel is not bound to this terminal — reply normally to stdout only. Do **not** call \`grome__chat_response\` (it will throw) and do **not** call \`grome__register_session\` with a guessed ID.
-
-See \`.grome/grome.md\` → "Chat panel routing" for the full contract (env-bound semantics, tool reference, no-fallback binding rule, agent-override path).
-
 <!-- grome-protocol: ${GROME_PROTOCOL_VERSION} -->
 ${END_MARKER}`;
 }
@@ -386,29 +373,6 @@ Flow for session events:
 **Coordination.** Only one real watcher runs per workspace; a second \`grome watch\` invocation detects the live pid and tails the inbox instead, so it's safe for every agent to run the command. Use \`--poll\` for network / external drives; \`--force\` to take over a stale watcher.
 
 **Optional author tag.** When appending a turn, you may add an \`[<agent>]\` suffix to the header line — e.g. \`## ${projectName} @ <ISO timestamp> [claude]\`. This is purely a routing hint for IDE consumers that want to badge a specific pane; it has no effect on protocol behavior and is safe to omit.
-
-### Chat panel routing
-
-When the user is talking to you through the **Grome IDE dashboard chat panel**, the agent process needs to know two things: that the panel exists for this terminal, and how to send replies that render in the panel. Both are wired through the grome-connect MCP server (\`grome__*\` tools) plus environment variables that the IDE injects per terminal.
-
-**When the panel is bound to your terminal.** The IDE injects \`GROME_TERMINAL_INSTANCE_ID\` into \`IShellLaunchConfig.env\` for every terminal it spawns. If that variable is set, this terminal's stdout is being mirrored into a dashboard chat-panel surface, and the user may be reading you through either or both. If it's unset, no panel is bound and you reply through stdout normally.
-
-**Tools involved.**
-
-- \`grome__register_session({ terminalInstanceId, agent? })\` — bind this MCP server process to a terminal pane. Usually a no-op: \`GROME_TERMINAL_INSTANCE_ID\` and \`GROME_AGENT\` (also injected by the IDE) seed the binding automatically when the MCP server starts. Call this explicitly only when you need to **override** the env defaults — e.g. Codex running in a Claude-tagged terminal would call \`register_session({ ..., agent: 'codex' })\` to correct the agent label.
-- \`grome__read_chat_log\` — return the prior turns of this terminal's chat log as \`{ header, turns: [{ role, body, ts, agent? }] }\`. Reads from \`.grome/.runtime/chat/{instanceId}.jsonl\`. **Call this before every reply.** Your stdin only carries the latest prompt; without this you have no memory of earlier turns and the chat feels amnesiac.
-- \`grome__chat_response({ body })\` — append an assistant turn to the chat log. The IDE tails that file and renders the panel. Throws \`No terminal binding\` if neither env nor \`register_session\` has bound a terminal ID.
-
-**Every-turn flow when the panel is bound.**
-
-1. \`grome__read_chat_log\` to load prior context.
-2. Generate the full reply with that context in mind.
-3. Write the reply to stdout as you normally would — terminal scrollback is a real user-facing surface in the Grome IDE, not just developer details.
-4. Call \`grome__chat_response({ body: <same text> })\`. Both stdout and the chat panel must show **identical content**. Do not split, abbreviate, or summarize for one and not the other.
-
-**No-fallback binding rule.** Do **not** call \`grome__register_session\` with a guessed terminal ID (e.g. \`"1"\`) when \`GROME_TERMINAL_INSTANCE_ID\` is unset. A guess silently routes every other pane's replies to the same chat log; failing loud is the right behavior. \`grome__chat_response\` throws \`No terminal binding\` in that state — surface that to the user as "the IDE didn't inject the terminal ID; chat-panel routing is unavailable for this session" rather than papering over it.
-
-**Chat is the user channel, threads are the inter-project channel.** \`chat_response\` is **not** a replacement for \`reply_thread\` — chat lives between user and agent, threads live between agents in different projects. Don't conflate them.
 
 ### Hook events (IDE-only)
 

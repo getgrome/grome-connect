@@ -78,9 +78,8 @@ export const SkillTemplate = {
    */
   unprovision(projectRoot: string): Array<{ path: string; action: 'removed' | 'skipped-user-managed' | 'file-missing' }> {
     const out: Array<{ path: string; action: 'removed' | 'skipped-user-managed' | 'file-missing' }> = [];
-    const allPaths = [...SKILL_SLOTS.map((s) => s.relPath), ...LEGACY_SKILL_RELPATHS];
-    for (const rel of allPaths) {
-      const abs = path.join(projectRoot, rel);
+    for (const slot of SKILL_SLOTS) {
+      const abs = path.join(projectRoot, slot.relPath);
       if (!fs.existsSync(abs)) {
         out.push({ path: abs, action: 'file-missing' });
         continue;
@@ -92,13 +91,6 @@ export const SkillTemplate = {
       }
       try {
         fs.unlinkSync(abs);
-        // Also clean up the now-empty parent directory if we own it.
-        const parent = path.dirname(abs);
-        if (parent.endsWith('/grome-workspace') && fs.existsSync(parent)) {
-          try {
-            if (fs.readdirSync(parent).length === 0) fs.rmdirSync(parent);
-          } catch { /* best-effort */ }
-        }
         out.push({ path: abs, action: 'removed' });
       } catch {
         // best-effort
