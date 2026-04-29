@@ -22,22 +22,9 @@ export interface SkillSlot {
 
 const SKILL_SLOTS: SkillSlot[] = [
   {
-    // Claude Code loads project-local skills from `.claude/skills/<name>/SKILL.md`
-    // (directory layout). The flat `.claude/skills/<name>.md` shape that 0.6.0
-    // shipped never loads. See https://code.claude.com/docs/en/skills.md
-    relPath: '.claude/skills/grome-workspace/SKILL.md',
+    relPath: '.claude/skills/grome-workspace.md',
     build: buildClaudeSkill,
   },
-];
-
-/**
- * Files written by 0.6.0 that we now know don't load. `provision` will
- * delete them when sentinel-managed (matching the same never-clobber-
- * user-files semantics). Listed once so we can drop the migration when
- * 0.6.0 is old enough to assume nobody has it installed.
- */
-const LEGACY_SKILL_RELPATHS: string[] = [
-  '.claude/skills/grome-workspace.md',
 ];
 
 export interface ProvisionResult {
@@ -54,18 +41,6 @@ export const SkillTemplate = {
    */
   provision(projectRoot: string): ProvisionResult[] {
     const out: ProvisionResult[] = [];
-    // 0.6.0 → 0.6.1 migration: remove legacy flat-file skills if we wrote
-    // them. User-authored files at the same path are preserved.
-    for (const rel of LEGACY_SKILL_RELPATHS) {
-      const abs = path.join(projectRoot, rel);
-      if (!fs.existsSync(abs)) continue;
-      try {
-        const raw = fs.readFileSync(abs, 'utf8');
-        if (raw.includes(MANAGED_SENTINEL)) fs.unlinkSync(abs);
-      } catch {
-        // best-effort
-      }
-    }
     for (const slot of SKILL_SLOTS) {
       out.push(provisionSlot(projectRoot, slot));
     }
