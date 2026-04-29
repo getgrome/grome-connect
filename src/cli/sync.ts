@@ -63,6 +63,7 @@ export async function syncCommand(options: SyncCommandOptions = {}): Promise<voi
         const verb =
           e.action === 'created' ? color.green('created') :
           e.action === 'updated' ? color.cyan('updated') :
+          e.action === 'removed' ? color.yellow('removed') :
           e.action === 'skipped-user-managed' ? color.dim('skipped (user-managed)') :
           e.action === 'skipped-opt-out' ? color.dim('skipped (opt-out)') :
           e.action;

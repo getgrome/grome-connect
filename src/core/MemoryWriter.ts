@@ -99,7 +99,7 @@ export interface SyncResult {
 export interface ProvisionLogEntry {
   kind: 'mcp' | 'skill';
   path: string;
-  action: 'created' | 'updated' | 'unchanged' | 'skipped-user-managed' | 'skipped-opt-out';
+  action: 'created' | 'updated' | 'unchanged' | 'removed' | 'skipped-user-managed' | 'skipped-opt-out';
 }
 
 export interface SyncOptions {
@@ -242,17 +242,24 @@ export class MemoryWriter {
         }
       }
 
-      if (!skillEnabled) {
-        for (const slot of SkillTemplate.slots) {
+      // 0.6.x → 0.7.0: the skill-as-routing-contract approach turned
+      // out to be the wrong fit (skills are description-dispatched;
+      // ours needed unconditional load). The contract now lives inline
+      // in CLAUDE.md / AGENTS.md (via AgentConfigInjector) and in
+      // .grome/grome.md "Chat panel routing" section. Sync's job for
+      // skill files is now to *clean up* any managed leftovers from
+      // 0.6.x. User-authored files at the same paths are preserved.
+      //
+      // When provisionSkill === false the user has opted out of any
+      // skill-related action — leave their tree alone entirely.
+      if (skillEnabled) {
+        for (const r of SkillTemplate.unprovision(root)) {
+          if (r.action === 'file-missing') continue; // nothing to log
           log.push({
             kind: 'skill',
-            path: path.join(root, slot.relPath),
-            action: 'skipped-opt-out',
+            path: r.path,
+            action: r.action === 'removed' ? 'removed' : r.action,
           });
-        }
-      } else {
-        for (const r of SkillTemplate.provision(root)) {
-          log.push({ kind: 'skill', path: r.path, action: r.action });
         }
       }
 
