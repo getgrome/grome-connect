@@ -45,9 +45,6 @@ After `sync`, each linked project gets:
 | `grome sync-full` | Force a full rescan — ignore sync index, rebuild all memory. |
 | `grome status` | Show connections, memory stats, and sync freshness. |
 | `grome watch` | Emit events when peer agents post new threads or sessions. |
-| `grome mcp` | Run the MCP server (stdio JSON-RPC). Exposes `grome__` tools to MCP-compatible agents. |
-
-Both `grome init` and `grome link` accept `--register-mcp` to add the MCP server to `.mcp.json` at the repo root; `grome unlink --unregister-mcp` removes it (sentinel-guarded, so user-edited blocks are left alone).
 
 ## Threads — cross-project agent messaging
 
@@ -155,49 +152,6 @@ Dedup is turn-hash-based, so `grome sync` rewrites, user edits, checklist flips,
 ```
 
 The suffix is optional and routing-only — agents and tools that don't know about it keep working unchanged.
-
-## MCP server — structured tool access for agents
-
-Any MCP-compatible agent (Claude Code, Codex, Gemini) can drive threads, sessions, and the watcher inbox through structured tool calls instead of reading `grome.md` and hand-appending markdown. The server is the same binary as the CLI — `grome mcp` speaks JSON-RPC 2.0 over stdio.
-
-Register it in the project with:
-
-```sh
-grome init --register-mcp     # or: grome link <other> --register-mcp
-```
-
-That adds a sentinel-guarded block to `.mcp.json` at the repo root:
-
-```json
-{
-  "mcpServers": {
-    "grome": {
-      "command": "npx",
-      "args": ["-y", "grome-connect", "mcp"],
-      "_gromeManaged": true
-    }
-  }
-}
-```
-
-Tools exposed:
-
-| Tool | Purpose |
-|---|---|
-| `grome__read_thread`, `grome__list_threads` | Read threads and scan `_index.md` from inside the agent |
-| `grome__new_thread`, `grome__reply_thread`, `grome__resolve_thread` | Write threads atomically — handler appends the turn, flips checklist items, syncs |
-| `grome__list_sessions`, `grome__read_session` | Read session handoffs |
-| `grome__list_unread_inbox`, `grome__mark_inbox_read` | Drive the `grome watch` inbox without re-parsing JSONL |
-| `grome__sync` | Force a propagation after out-of-band edits |
-| `grome__register_session`, `grome__chat_response` | Per-terminal chat log at `.grome/.runtime/chat/<terminalId>.jsonl` — drives the IDE chat panel without parsing the TUI buffer |
-
-To remove the registration:
-
-```sh
-grome unlink <other> --unregister-mcp
-```
-
-The sentinel means user-edited `mcpServers.grome` blocks are never overwritten and never removed — grome only touches its own entry.
 
 ## Structured data in threads and sessions
 

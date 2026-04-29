@@ -6,7 +6,6 @@ import { syncCommand } from './cli/sync.js';
 import { statusCommand } from './cli/status.js';
 import { unlinkCommand } from './cli/unlink.js';
 import { watchCommand } from './cli/watch.js';
-import { mcpCommand } from './cli/mcp.js';
 
 const program = new Command();
 
@@ -18,8 +17,7 @@ program
 program
   .command('init')
   .description('Initialize .grome/ in the current project')
-  .option('--register-mcp', 'Also register the grome MCP server in .mcp.json at repo root')
-  .action((opts: { registerMcp?: boolean }) => initCommand(opts));
+  .action(initCommand);
 
 program
   .command('link <path>')
@@ -28,12 +26,8 @@ program
   .option('--force', 'Skip large repo warning')
   .option('--agents <list>', 'Comma-separated: detect | all | none | <alias,alias> (e.g. claude,cursor)')
   .option('-y, --yes', 'Accept defaults non-interactively')
-  .option('--register-mcp', 'Also register the grome MCP server in .mcp.json at both repo roots')
-  .action(
-    (
-      targetPath: string,
-      opts: { force?: boolean; agents?: string; yes?: boolean; registerMcp?: boolean }
-    ) => linkCommand(targetPath, opts)
+  .action((targetPath: string, opts: { force?: boolean; agents?: string; yes?: boolean }) =>
+    linkCommand(targetPath, opts)
   );
 
 program
@@ -53,12 +47,8 @@ program
 
 program
   .command('unlink <path>')
-  .alias('disconnect')
   .description('Remove a project connection')
-  .option('--unregister-mcp', 'Also remove the grome MCP server from .mcp.json in both repos (sentinel-guarded)')
-  .action((targetPath: string, opts: { unregisterMcp?: boolean }) =>
-    unlinkCommand(targetPath, opts)
-  );
+  .action(unlinkCommand);
 
 program
   .command('watch')
@@ -66,10 +56,5 @@ program
   .option('--poll', 'Use polling instead of fs.watch (network / external drives)')
   .option('--force', 'Take over watcher even if another pid is live')
   .action((opts: { poll?: boolean; force?: boolean }) => watchCommand(opts));
-
-program
-  .command('mcp')
-  .description('Run the Grome MCP server (stdio JSON-RPC) — exposes grome__ tools to MCP-compatible agents')
-  .action(mcpCommand);
 
 program.parse();

@@ -14,14 +14,6 @@ export {
 } from './core/AgentConfigInjector.js';
 export type { DetectResult } from './core/AgentConfigInjector.js';
 export { Scanner } from './core/Scanner.js';
-export { McpRegistrar } from './core/McpRegistrar.js';
-export type {
-  McpConfig,
-  McpServerEntry,
-  RegisterOptions,
-  RegisterResult,
-  UnregisterResult,
-} from './core/McpRegistrar.js';
 export { detectFramework } from './extractors/detection.js';
 
 export type * from './types.js';
